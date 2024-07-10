@@ -8,187 +8,203 @@
 #include "ModbusServer.h"
 
 ModbusServer::ModbusServer(void) {
-//	this->reles = reles;
+
 }
 
+/*
+ * We must connect our server to a port
+ */
 bool ModbusServer::init(int port) {
+
 	this->port = port;
-    //setup a socket and connection tools
-    bzero((char*)&servAddr, sizeof(servAddr));
-    servAddr.sin_family = AF_INET;
-    servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servAddr.sin_port = htons(port);
 
-    //open stream oriented socket with internet address
-    //also keep track of the socket descriptor
-    serverSd = socket(AF_INET, SOCK_STREAM, 0);
-    if(serverSd < 0)
+	/* Initialize the connection object with zeros. */
+    memset(&mbServer, 0, sizeof(mbServer));
+    mbServer.sin_family = AF_INET;
+    mbServer.sin_addr.s_addr = htonl(INADDR_ANY);
+    mbServer.sin_port = htons(port);
+
+    /* Create a socket. */
+    mbServerSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if(mbServerSocket < 0)
     {
-        cout << "Error establishing the server socket" << endl;
+        cout << "Modbus Server Socket Error!!!" << endl;
         return FALSE;
     }
-    //bind the socket to its local address
-    bindStatus = bind(serverSd, (struct sockaddr*) &servAddr,
-        sizeof(servAddr));
 
-    if(bindStatus < 0)
+    /* Socket established. Let's bind to the address. */
+    bindSocketStatus = bind(mbServerSocket, (struct sockaddr*) &mbServer,
+        sizeof(mbServer));
+
+    if(bindSocketStatus < 0)
     {
-    	cout << endl << "Error binding socket to local address" << endl;
-       	cout << "It is not possible to open port " << port << "! Are you root?" << endl;
+    	cout << endl << "Error binding the socket!!" << endl;
+       	cout << "It is not possible to open the port " << port << "! Are you root?" << endl;
         return FALSE;
     }
-    //listen for up to totalConnections requests at a time
-    listen(serverSd, totalConnections);
+
+    /* All good. Let's listen to the connections. */
+    listen(mbServerSocket, totalConnections);
+
     return TRUE;
 }
 
-void ModbusServer::runServer(void){
-    //receive a request from client using accept
-    //we need a new address to connect with the client
-    sockaddr_in newSockAddr;
-    socklen_t newSockAddrSize = sizeof(newSockAddr);
+void ModbusServer::runMbServer(void){
+
+	/* Wait for the client connection. */
+
+    sockaddr_in newSocketAdd;
+    socklen_t newSocketAddSize = sizeof(newSocketAdd);
+
+    /* This is an infinite loop. It finishes with CTR+C signal. */
     while(1){
     	bytesRead = 1;
-		//accept, create a new socket descriptor to
-		//handle the new connection with client
+
     	cout << endl << "Waiting for a client to connect on port " << port << " ..." << endl;
-    	newSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
-		if(newSd < 0)
+
+    	/* Blocking function waiting the client connection.
+    	 * That's why the modbus server must run as a thread. */
+    	newSocket = accept(mbServerSocket, (sockaddr *)&newSocketAdd, &newSocketAddSize);
+
+    	if(newSocket < 0)
 		{
 			cerr << "Error accepting request from client!" << endl;
 			exit(1);
 		}
 
-		cout << "Connected with client!" << endl;
+		cout << "Client connected ";
 
 		while(bytesRead > 0) {
-			//receive a message from the client (listen)
-			cout << "Waiting modbus request..." << endl;
-			memset(&msg, 0, sizeof(msg));//clear the buffer
-			bytesRead = recv(newSd, (char*)&msg, sizeof(msg), 0);
 
-			cout << "Bytes read: " << bytesRead << endl;
+			/* Blank the buffer. */
+			memset(&mbMsg, 0, sizeof(mbMsg));
+			cout << " and waiting modbus request ..." << endl;
+			bytesRead = recv(newSocket, (char*)&mbMsg, sizeof(mbMsg), 0);
 
-			transID 	= msg[0] << 8 | msg[1];
-			protocol 	= msg[2] << 8 | msg[3];
-			len			= msg[4] << 8 | msg[5];
-			uID			= (int) msg[6];
-			func		= (int) msg[7];
+			if (DEBUG_LEVEL == DBG_LEVEL_03) {
+				cout << "Bytes read: " << bytesRead << endl;
+			}
+
+			transID 	= mbMsg[0] << 8 | mbMsg[1];
+			protocol 	= mbMsg[2] << 8 | mbMsg[3];
+			len			= mbMsg[4] << 8 | mbMsg[5];
+			uID			= (int) mbMsg[6];
+			func		= (int) mbMsg[7];
 
 //	       	for (int i = 0; i < bytesRead; i++){
 //	       		cout << "char[" << i << "]: ";
 //	       		cout << (int)msg[i] << endl;
 //	       	}
 
-			startAdd = msg[8] << 8  | msg[9];
-			numRegs  = msg[10] << 8 | msg[11];
+			startAdd = mbMsg[8] << 8  | mbMsg[9];
+			numRegs  = mbMsg[10] << 8 | mbMsg[11];
 
 			/* Selecting the function */
 			switch (func){
 				case 0:
-						shutdown (newSd, SHUT_RDWR);
+						shutdown (newSocket, SHUT_RDWR);
 						break;
-				case MB_FC_READ_COILS:
+				case READ_COILS:
 						cout << "MB_FC_READ_COILS" << endl;
 						cout << "Start Address: " << startAdd << endl;
 						cout << "Num. Coils: " << numRegs << endl;
 						msgIndex = 4;
 						len = 3 + ceil((double)numRegs /8);
 						cout << "Len answer: " << len << endl;
-						msg[msgIndex++] = (unsigned) len >> 8;
-						msg[msgIndex++] = (unsigned) len & 0xff;
-						msg[msgIndex++] = (unsigned) uID & 0xff;
-						msg[msgIndex++] = (unsigned) func & 0xff;
-						msg[msgIndex++] = (unsigned) (ceil((double)numRegs /8)) & 0xff;
-						for (int r = 0; r < numRegs; r++){
-							if(reles[uID - 1].coil[startAdd + r]){
-								msg[msgIndex] = msg[msgIndex] | (0x01 << r);
-							}
-						}
+						mbMsg[msgIndex++] = (unsigned) len >> 8;
+						mbMsg[msgIndex++] = (unsigned) len & 0xff;
+						mbMsg[msgIndex++] = (unsigned) uID & 0xff;
+						mbMsg[msgIndex++] = (unsigned) func & 0xff;
+						mbMsg[msgIndex++] = (unsigned) (ceil((double)numRegs /8)) & 0xff;
+//						for (int r = 0; r < numRegs; r++){
+//							if(reles[uID - 1].coil[startAdd + r]){
+//								mbMsg[msgIndex] = mbMsg[msgIndex] | (0x01 << r);
+//							}
+//						}
 
-						send(newSd, (char*)&msg, (len + 6), 0);
+						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 
-				case MB_FC_READ_DISCRETE_INPUTS:
+				case READ_DISCRETE_INPUTS:
 						cout << "MB_FC_READ_DISCRETE_INPUTS" << endl;
 						cout << "Start Address: " << startAdd << endl;
 						cout << "Num. Disc. Inputs: " << numRegs << endl;
 						msgIndex = 4;
 						len = 3 + ceil((double)numRegs /8);
 						cout << "Len answer: " << len << endl;
-						msg[msgIndex++] = (unsigned) len >> 8;
-						msg[msgIndex++] = (unsigned) len & 0xff;
-						msg[msgIndex++] = (unsigned) uID & 0xff;
-						msg[msgIndex++] = (unsigned) func & 0xff;
-						msg[msgIndex++] = (unsigned) (ceil((double)numRegs /8)) & 0xff;
-						for (int r = 0; r < numRegs; r++){
-							if(reles[uID - 1].coil[startAdd + r]){
-								msg[msgIndex] = msg[msgIndex] | (0x01 << r);
-							}
-						}
+						mbMsg[msgIndex++] = (unsigned) len >> 8;
+						mbMsg[msgIndex++] = (unsigned) len & 0xff;
+						mbMsg[msgIndex++] = (unsigned) uID & 0xff;
+						mbMsg[msgIndex++] = (unsigned) func & 0xff;
+						mbMsg[msgIndex++] = (unsigned) (ceil((double)numRegs /8)) & 0xff;
+//						for (int r = 0; r < numRegs; r++){
+//							if(reles[uID - 1].coil[startAdd + r]){
+//								mbMsg[msgIndex] = mbMsg[msgIndex] | (0x01 << r);
+//							}
+//						}
 
-						send(newSd, (char*)&msg, (len + 6), 0);
+						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 
-				case MB_FC_READ_HOLDING_REGISTERS:
+				case READ_HOLDING_REGISTERS:
 						cout << "MB_FC_READ_HOLDING_REGISTERS" << endl;
-						len = procReadReg((char*)&msg);
-						send(newSd, (char*)&msg, len, 0);
+						len = procReadReg((char*)&mbMsg);
+						send(newSocket, (char*)&mbMsg, len, 0);
 						break;
 
-				case MB_FC_READ_INPUT_REGISTERS:
+				case READ_INPUT_REGISTERS:
 						cout << "MB_FC_READ_INPUT_REGISTERS" << endl;
-						len = procReadReg((char*)&msg);
-						send(newSd, (char*)&msg, len, 0);
+						len = procReadReg((char*)&mbMsg);
+						send(newSocket, (char*)&mbMsg, len, 0);
 						break;
 
-				case MB_FC_WRITE_SINGLE_COIL:
+				case WRITE_SINGLE_COIL:
 						cout << "MB_FC_WRITE_SINGLE_COIL" << endl;
 						cout << "Output Address: " << startAdd << endl;
 						cout << "Value: " << numRegs << endl;
 						break;
 
-				case MB_FC_WRITE_SINGLE_REGISTER:
+				case WRITE_SINGLE_REGISTER:
 						cout << "MB_FC_WRITE_SINGLE_REGISTER" << endl;
 						cout << "Register Address: " << startAdd << endl;
 						cout << "Value: " << numRegs << endl;
 
 						msgIndex = 10;
-						reles[uID - 1].regs[startAdd] = (unsigned) msg[msgIndex++] << 8;
-						reles[uID - 1].regs[startAdd] |= (unsigned) msg[msgIndex++] & 0xff;
+//						reles[uID - 1].regs[startAdd] = (unsigned) mbMsg[msgIndex++] << 8;
+//						reles[uID - 1].regs[startAdd] |= (unsigned) mbMsg[msgIndex++] & 0xff;
 
-						send(newSd, (char*)&msg, (12), 0);
+						send(newSocket, (char*)&mbMsg, (12), 0);
 						break;
 
-				case MB_FC_WRITE_MULTIPLE_REGISTERS:
+				case WRITE_MULTIPLE_REGISTERS:
 						cout << "MB_FC_WRITE_MULTIPLE_REGISTERS" << endl;
 						cout << "Start Address: " << startAdd << endl;
 						cout << "Num. Registers: " << numRegs << endl;
 						msgIndex = 13;
-						for (int r = 0; r <= numRegs; r++){
-							reles[uID - 1].regs[startAdd + r] = (unsigned) msg[msgIndex++] << 8;
-							reles[uID - 1].regs[startAdd + r] |= (unsigned) msg[msgIndex++] & 0xff;
-						}
+//						for (int r = 0; r <= numRegs; r++){
+//							reles[uID - 1].regs[startAdd + r] = (unsigned) mbMsg[msgIndex++] << 8;
+//							reles[uID - 1].regs[startAdd + r] |= (unsigned) mbMsg[msgIndex++] & 0xff;
+//						}
 
 						msgIndex = 4;
 						len = 6;
-						msg[msgIndex++] = (unsigned) len >> 8;
-						msg[msgIndex++] = (unsigned) len & 0xff;
+						mbMsg[msgIndex++] = (unsigned) len >> 8;
+						mbMsg[msgIndex++] = (unsigned) len & 0xff;
 
-						send(newSd, (char*)&msg, (len + 6), 0);
+						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 				default:
 						cout << "MB_EXCEP_ILLEGAL_FUNCTION" << endl;
-						msg[7] += 0x80;
-						msg[8] = MB_EXCEP_ILLEGAL_FUNCTION;
-						send(newSd, (char*)&msg, 9, 0);
+						mbMsg[7] += 0x80;
+						mbMsg[8] = EXCEP_ILLEGAL_FUNCTION;
+						send(newSocket, (char*)&mbMsg, 9, 0);
 			}
 		}
 	}
 
     //we need to close the socket descriptors after we're all done
-    close(newSd);
-    close(serverSd);
+    close(newSocket);
+    close(mbServerSocket);
     cout << "Connection closed..." << endl;
 }
 
@@ -213,14 +229,14 @@ int ModbusServer::procReadReg(char* msg){
 		msg[msgIndex++] = (unsigned) msg[7] & 0xff;
 		msg[msgIndex++] = (unsigned) (numRegs * 2) & 0xff;
 
-		for (int r = 0; r <= numRegs; r++){
-			msg[msgIndex++] = (unsigned) reles[msg[6] - 1].regs[startAdd + r] >> 8;
-			msg[msgIndex++] = (unsigned) reles[msg[6] - 1].regs[startAdd + r] & 0xff;
-		}
+//		for (int r = 0; r <= numRegs; r++){
+//			msg[msgIndex++] = (unsigned) reles[msg[6] - 1].regs[startAdd + r] >> 8;
+//			msg[msgIndex++] = (unsigned) reles[msg[6] - 1].regs[startAdd + r] & 0xff;
+//		}
 
 	} else {
 		msg[7] += 0x80;
-		msg[8] = MB_EXCEP_ILLEGAL_DATA_ADD;
+		msg[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;
 	}
 
@@ -238,24 +254,24 @@ int ModbusServer::checkPDU(char* msg){
 	func		= msg[7];
 	startAdd 	= msg[8] << 8  | msg[9];
 	numRegs  	= msg[10] << 8 | msg[11];
-	totalRegs	= sizeof(reles[uID].regs)/sizeof(int);
+//	totalRegs	= sizeof(reles[uID].regs)/sizeof(int);
 
 	/* Selecting the function */
 	switch (func){
-		case MB_FC_READ_COILS:
-		case MB_FC_READ_DISCRETE_INPUTS:
-		case MB_FC_WRITE_SINGLE_COIL:
+		case READ_COILS:
+		case READ_DISCRETE_INPUTS:
+		case WRITE_SINGLE_COIL:
 
-			startAdd -= reles[uID].coilOffSet;
+//			startAdd -= reles[uID].coilOffSet;
 
 			break;
 
-		case MB_FC_READ_HOLDING_REGISTERS:
-		case MB_FC_READ_INPUT_REGISTERS:
-		case MB_FC_WRITE_SINGLE_REGISTER:
-		case MB_FC_WRITE_MULTIPLE_REGISTERS:
+		case READ_HOLDING_REGISTERS:
+		case READ_INPUT_REGISTERS:
+		case WRITE_SINGLE_REGISTER:
+		case WRITE_MULTIPLE_REGISTERS:
 
-			startAdd -= reles[uID].regOffSet;
+//			startAdd -= reles[uID].regOffSet;
 
 			break;
 

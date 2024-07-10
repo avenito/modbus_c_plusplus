@@ -11,10 +11,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "server/ModbusServer.h"
+
 using namespace std;
 
 /* Instantiates the modbus server */
-server/ModbusServer	Server();
+ModbusServer	Server();
 
 /* Declare the function to be called when pressing CTR+C to finish the program */
 void signal_callback_handler(int signum) {

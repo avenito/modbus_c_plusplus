@@ -9,19 +9,25 @@
 #define MODBUSSERVER_H_
 
 /* Modbus function codes */
-#define MB_FC_READ_COILS               0x01
-#define MB_FC_READ_DISCRETE_INPUTS     0x02
-#define MB_FC_READ_HOLDING_REGISTERS   0x03
-#define MB_FC_READ_INPUT_REGISTERS     0x04
-#define MB_FC_WRITE_SINGLE_COIL        0x05
-#define MB_FC_WRITE_SINGLE_REGISTER    0x06
-#define MB_FC_WRITE_MULTIPLE_REGISTERS 0x10
+#define READ_COILS               	0x01
+#define READ_DISCRETE_INPUTS     	0x02
+#define READ_HOLDING_REGISTERS   	0x03
+#define READ_INPUT_REGISTERS     	0x04
+#define WRITE_SINGLE_COIL       	0x05
+#define WRITE_SINGLE_REGISTER    	0x06
+#define WRITE_MULTIPLE_REGISTERS 	0x10
 
-#define MB_BROADCAST_ADDRESS 0
+#define BROADCAST_ADDRESS 0
 
-#define MB_EXCEP_ILLEGAL_FUNCTION		0x01
-#define MB_EXCEP_ILLEGAL_DATA_ADD		0x02
-#define MB_EXCEP_ILLEGAL_DATA_VALUE		0x03
+#define EXCEP_ILLEGAL_FUNCTION		0x01
+#define EXCEP_ILLEGAL_DATA_ADD		0x02
+#define EXCEP_ILLEGAL_DATA_VALUE	0x03
+
+#define DBG_LEVEL_01				0x01
+#define DBG_LEVEL_02				0x02
+#define DBG_LEVEL_03				0x03
+
+#define DEBUG_LEVEL					DBG_LEVEL_03
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -33,21 +39,20 @@
 #include <math.h>
 #include <unistd.h>
 
-//#include "components/Relay.h"
-
 using namespace std;
 
 class ModbusServer {
+
 private:
+
 	int port;
-//	Relay *reles;
 
 	const bool TRUE  = 1;
 	const bool FALSE = 0;
 	const int  totalConnections = 1;
 
     //buffer to send and receive messages with
-    char 	msg[1500];
+    char 	mbMsg[1500];
     int 	transID;
     int 	protocol;
     int 	len;
@@ -57,12 +62,12 @@ private:
     int		numRegs;
     int		bytesRead;
     int		msgIndex;
-    int 	newSd;
+    int 	newSocket;
     float	aux;
 
-    sockaddr_in servAddr;
-    int			serverSd;
-    int 		bindStatus;
+    sockaddr_in mbServer;
+    int			mbServerSocket;
+    int 		bindSocketStatus;
 
     int checkPDU(char* msg);	// Verifica se o endereco ta na faixa
     int procReadReg(char* msg);	// Processa o request e retorna o tamanho do envio
@@ -74,7 +79,7 @@ public:
 
 	bool init(int port);
 
-	void runServer(void);
+	void runMbServer(void);
 
 	int getPort(void);
 };
