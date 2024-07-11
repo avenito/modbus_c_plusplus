@@ -72,17 +72,22 @@ void ModbusServer::runMbServer(void){
 			exit(1);
 		}
 
-		cout << "Client connected ";
+		cout << "Client connected ... ";
 
 		while(bytesRead > 0) {
 
 			/* Blank the buffer. */
 			memset(&mbMsg, 0, sizeof(mbMsg));
-			cout << " and waiting modbus request ..." << endl;
+			/* Wait for the connection */
+			cout << "waiting modbus request ..." << endl;
 			bytesRead = recv(newSocket, (char*)&mbMsg, sizeof(mbMsg), 0);
 
 			if (DEBUG_LEVEL == DBG_LEVEL_03) {
 				cout << "Bytes read: " << bytesRead << endl;
+				for (int i = 0; i < bytesRead; i++){
+					cout << "char[" << i << "]: ";
+					cout << (int)mbMsg[i] << endl;
+				}
 			}
 
 			transID 	= mbMsg[0] << 8 | mbMsg[1];
@@ -90,24 +95,21 @@ void ModbusServer::runMbServer(void){
 			len			= mbMsg[4] << 8 | mbMsg[5];
 			uID			= (int) mbMsg[6];
 			func		= (int) mbMsg[7];
-
-//	       	for (int i = 0; i < bytesRead; i++){
-//	       		cout << "char[" << i << "]: ";
-//	       		cout << (int)msg[i] << endl;
-//	       	}
-
-			startAdd = mbMsg[8] << 8  | mbMsg[9];
-			numRegs  = mbMsg[10] << 8 | mbMsg[11];
+			startAdd 	= mbMsg[8] << 8  | mbMsg[9];
+			numRegs  	= mbMsg[10] << 8 | mbMsg[11];
 
 			/* Selecting the function */
 			switch (func){
 				case 0:
 						shutdown (newSocket, SHUT_RDWR);
 						break;
+
 				case READ_COILS:
-						cout << "MB_FC_READ_COILS" << endl;
-						cout << "Start Address: " << startAdd << endl;
-						cout << "Num. Coils: " << numRegs << endl;
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "READ_COILS" << endl;
+							cout << "Start Address: " << startAdd << endl;
+							cout << "Num. Coils: " << numRegs << endl;
+						}
 						msgIndex = 4;
 						len = 3 + ceil((double)numRegs /8);
 						cout << "Len answer: " << len << endl;
@@ -126,9 +128,11 @@ void ModbusServer::runMbServer(void){
 						break;
 
 				case READ_DISCRETE_INPUTS:
-						cout << "MB_FC_READ_DISCRETE_INPUTS" << endl;
-						cout << "Start Address: " << startAdd << endl;
-						cout << "Num. Disc. Inputs: " << numRegs << endl;
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "READ_DISCRETE_INPUTS" << endl;
+							cout << "Start Address: " << startAdd << endl;
+							cout << "Num. Disc. Inputs: " << numRegs << endl;
+						}
 						msgIndex = 4;
 						len = 3 + ceil((double)numRegs /8);
 						cout << "Len answer: " << len << endl;
@@ -147,28 +151,35 @@ void ModbusServer::runMbServer(void){
 						break;
 
 				case READ_HOLDING_REGISTERS:
-						cout << "MB_FC_READ_HOLDING_REGISTERS" << endl;
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "READ_HOLDING_REGISTERS" << endl;
+						}
 						len = procReadReg((char*)&mbMsg);
 						send(newSocket, (char*)&mbMsg, len, 0);
 						break;
 
 				case READ_INPUT_REGISTERS:
-						cout << "MB_FC_READ_INPUT_REGISTERS" << endl;
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "READ_INPUT_REGISTERS" << endl;
+						}
 						len = procReadReg((char*)&mbMsg);
 						send(newSocket, (char*)&mbMsg, len, 0);
 						break;
 
 				case WRITE_SINGLE_COIL:
-						cout << "MB_FC_WRITE_SINGLE_COIL" << endl;
-						cout << "Output Address: " << startAdd << endl;
-						cout << "Value: " << numRegs << endl;
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "WRITE_SINGLE_COIL" << endl;
+							cout << "Output Address: " << startAdd << endl;
+							cout << "Value: " << numRegs << endl;
+						}
 						break;
 
 				case WRITE_SINGLE_REGISTER:
-						cout << "MB_FC_WRITE_SINGLE_REGISTER" << endl;
-						cout << "Register Address: " << startAdd << endl;
-						cout << "Value: " << numRegs << endl;
-
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "WRITE_SINGLE_REGISTER" << endl;
+							cout << "Register Address: " << startAdd << endl;
+							cout << "Value: " << numRegs << endl;
+						}
 						msgIndex = 10;
 //						reles[uID - 1].regs[startAdd] = (unsigned) mbMsg[msgIndex++] << 8;
 //						reles[uID - 1].regs[startAdd] |= (unsigned) mbMsg[msgIndex++] & 0xff;
@@ -177,9 +188,11 @@ void ModbusServer::runMbServer(void){
 						break;
 
 				case WRITE_MULTIPLE_REGISTERS:
-						cout << "MB_FC_WRITE_MULTIPLE_REGISTERS" << endl;
-						cout << "Start Address: " << startAdd << endl;
-						cout << "Num. Registers: " << numRegs << endl;
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "WRITE_MULTIPLE_REGISTERS" << endl;
+							cout << "Start Address: " << startAdd << endl;
+							cout << "Num. Registers: " << numRegs << endl;
+						}
 						msgIndex = 13;
 //						for (int r = 0; r <= numRegs; r++){
 //							reles[uID - 1].regs[startAdd + r] = (unsigned) mbMsg[msgIndex++] << 8;
@@ -194,7 +207,9 @@ void ModbusServer::runMbServer(void){
 						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 				default:
-						cout << "MB_EXCEP_ILLEGAL_FUNCTION" << endl;
+						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+							cout << "ILLEGAL_FUNCTION" << endl;
+						}
 						mbMsg[7] += 0x80;
 						mbMsg[8] = EXCEP_ILLEGAL_FUNCTION;
 						send(newSocket, (char*)&mbMsg, 9, 0);
