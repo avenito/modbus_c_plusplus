@@ -60,7 +60,9 @@ void ModbusServer::runMbServer(void){
     while(1){
     	bytesRead = 1;
 
-    	cout << endl << "Waiting for a client to connect on port " << port << " ..." << endl;
+		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
+			cout << endl << "Waiting for a client to connect on port " << port << " ..." << endl;
+		}
 
     	/* Blocking function waiting the client connection.
     	 * That's why the modbus server must run as a thread. */
@@ -68,18 +70,25 @@ void ModbusServer::runMbServer(void){
 
     	if(newSocket < 0)
 		{
-			cerr << "Error accepting request from client!" << endl;
-			exit(1);
+    		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
+    			cerr << "Error accepting request from client!" << endl;
+    		}
+    		exit(1);
 		}
 
-		cout << "Client connected ... ";
+		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
+			cout << "Client connected ... ";
+		}
 
 		while(bytesRead > 0) {
 
 			/* Blank the buffer. */
 			memset(&mbMsg, 0, sizeof(mbMsg));
 			/* Wait for the connection */
-			cout << "waiting modbus request ..." << endl;
+			if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+				cout << "waiting modbus request ..." << endl;
+			}
+
 			bytesRead = recv(newSocket, (char*)&mbMsg, sizeof(mbMsg), 0);
 
 			if (DEBUG_LEVEL == DBG_LEVEL_03) {
@@ -112,7 +121,9 @@ void ModbusServer::runMbServer(void){
 						}
 						msgIndex = 4;
 						len = 3 + ceil((double)numRegs /8);
-						cout << "Len answer: " << len << endl;
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Len answer: " << len << endl;
+						}
 						mbMsg[msgIndex++] = (unsigned) len >> 8;
 						mbMsg[msgIndex++] = (unsigned) len & 0xff;
 						mbMsg[msgIndex++] = (unsigned) uID & 0xff;
@@ -135,7 +146,9 @@ void ModbusServer::runMbServer(void){
 						}
 						msgIndex = 4;
 						len = 3 + ceil((double)numRegs /8);
-						cout << "Len answer: " << len << endl;
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Len answer: " << len << endl;
+						}
 						mbMsg[msgIndex++] = (unsigned) len >> 8;
 						mbMsg[msgIndex++] = (unsigned) len & 0xff;
 						mbMsg[msgIndex++] = (unsigned) uID & 0xff;
@@ -220,73 +233,77 @@ void ModbusServer::runMbServer(void){
     //we need to close the socket descriptors after we're all done
     close(newSocket);
     close(mbServerSocket);
-    cout << "Connection closed..." << endl;
+	if (DEBUG_LEVEL >= DBG_LEVEL_02) {
+		cout << "Connection closed..." << endl;
+	}
 }
 
-int ModbusServer::procReadReg(char* msg){
+int ModbusServer::procReadReg(char* msgMB){
 
 	int msgIndex = 4;
-	int len, aux;
 	int startAdd;
 	int numRegs;
 
-	startAdd = checkPDU(msg);
+	startAdd 	= msgMB[8] << 8  | msgMB[9];
+	numRegs  	= msgMB[10] << 8 | msgMB[11];
 
-	if (startAdd >= 0){
+	startAdd 	-= REGISTER_OFFSET;
 
-		numRegs  = msg[10] << 8 | msg[11];
+	if (DEBUG_LEVEL == DBG_LEVEL_03) {
+		cout << "Total registers: " << REGISTERS << endl;
+	}
 
+	if ((startAdd >= 0) || ((startAdd + numRegs) <= REGISTERS)) {
 		len = 3 + numRegs * 2;
-
-		msg[msgIndex++] = (unsigned) len >> 8;
-		msg[msgIndex++] = (unsigned) len * 0xff;
-		msg[msgIndex++] = (unsigned) msg[6] & 0xff;
-		msg[msgIndex++] = (unsigned) msg[7] & 0xff;
-		msg[msgIndex++] = (unsigned) (numRegs * 2) & 0xff;
-
-//		for (int r = 0; r <= numRegs; r++){
-//			msg[msgIndex++] = (unsigned) reles[msg[6] - 1].regs[startAdd + r] >> 8;
-//			msg[msgIndex++] = (unsigned) reles[msg[6] - 1].regs[startAdd + r] & 0xff;
-//		}
-
+		msgMB[msgIndex++] = (unsigned) len >> 8;
+		msgMB[msgIndex++] = (unsigned) len * 0xff;
+		msgMB[msgIndex++] = (unsigned) msgMB[6] & 0xff;
+		msgMB[msgIndex++] = (unsigned) msgMB[7] & 0xff;
+		msgMB[msgIndex++] = (unsigned) (numRegs * 2) & 0xff;
+		for (int r = 0; r <= numRegs; r++){
+			msgMB[msgIndex++] = (unsigned) registers[startAdd + r] >> 8;
+			msgMB[msgIndex++] = (unsigned) registers[startAdd + r] & 0xff;
+		}
 	} else {
-		msg[7] += 0x80;
-		msg[8] = EXCEP_ILLEGAL_DATA_ADD;
+		msgMB[7] += 0x80;
+		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;
 	}
 
 	return (len + 6);
 }
 
-int ModbusServer::checkPDU(char* msg){
+int ModbusServer::checkPDU(char* msgMB){
 
 	int	uID;
 	int startAdd;
 	int func;
-	int numRegs, totalRegs;
+	int numRegs;
 
-	uID			= msg[6] - 1;
-	func		= msg[7];
-	startAdd 	= msg[8] << 8  | msg[9];
-	numRegs  	= msg[10] << 8 | msg[11];
-//	totalRegs	= sizeof(reles[uID].regs)/sizeof(int);
+	uID			= msgMB[6] - 1;
+	func		= msgMB[7];
+	startAdd 	= msgMB[8] << 8  | msgMB[9];
+	numRegs  	= msgMB[10] << 8 | msgMB[11];
 
 	/* Selecting the function */
 	switch (func){
 		case READ_COILS:
-		case READ_DISCRETE_INPUTS:
 		case WRITE_SINGLE_COIL:
+			startAdd -= COIL_OFFSET;
+			break;
 
-//			startAdd -= reles[uID].coilOffSet;
+		case READ_DISCRETE_INPUTS:
+			startAdd -= DISCRETE_INPUT_OFFSET;
+			break;
 
+		case READ_INPUT_REGISTERS:
+			startAdd -= INPUT_OFFSET;
 			break;
 
 		case READ_HOLDING_REGISTERS:
-		case READ_INPUT_REGISTERS:
 		case WRITE_SINGLE_REGISTER:
 		case WRITE_MULTIPLE_REGISTERS:
-
-//			startAdd -= reles[uID].regOffSet;
+			startAdd -= REGISTER_OFFSET;
 
 			break;
 
@@ -294,13 +311,15 @@ int ModbusServer::checkPDU(char* msg){
 			;
 	}
 
-	cout << "rele[" << uID << "] - " << totalRegs << " regs" << endl;
-
-	if ((startAdd < 0) || ((startAdd + numRegs) > totalRegs)) {
-		return -1;
-	} else {
-		return startAdd;
-	}
+//	if (DEBUG_LEVEL == DBG_LEVEL_03) {
+//		cout << "rele[" << uID << "] - " << blockSize << " regs" << endl;
+//	}
+//
+//	if ((startAdd < 0) || ((startAdd + numRegs) > blockSize)) {
+//		return -1;
+//	} else {
+//		return startAdd;
+//	}
 }
 
 int ModbusServer::getPort(void) {
