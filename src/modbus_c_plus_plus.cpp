@@ -32,6 +32,8 @@ void signal_callback_handler(int signum) {
 void Example(){
 	while(true){
 		Server.registers[0]++;
+		Server.inputs[3]++;
+		Server.inputs[5] += 2;
 		this_thread::sleep_for(std::chrono::milliseconds(500));
 		Server.registers[1]--;
 	}
@@ -51,18 +53,19 @@ int main(int argc, char *argv[]) {
 
 	/* Initialize the modbus server. */
 	if (Server.init(port)){
-		cout << "Modbus server initialized ... listening port " << Server.getPort() << "." << endl;
+		cout << endl << "Modbus server initialized and listening to port " << Server.getPort() << "." << endl;
 	} else {
 		cout << "Error!!!" << endl;
 		exit(0);
 	}
 
-	/* Start example thread. */
-	thread t1 (Example);
-	t1.detach();
 	/* Start modbus server.  */
 	thread t2 (MBServer);
 	t2.detach();
+
+	/* Start example thread. */
+	thread t1 (Example);
+	t1.detach();
 
 	while(true){
 		this_thread::sleep_for(std::chrono::milliseconds(1500));

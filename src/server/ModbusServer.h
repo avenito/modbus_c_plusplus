@@ -39,7 +39,7 @@
 #define DBG_LEVEL_02				0x02
 #define DBG_LEVEL_03				0x03
 
-#define DEBUG_LEVEL					DBG_LEVEL_03
+#define DEBUG_LEVEL					DBG_LEVEL_02
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -81,8 +81,8 @@ private:
     float	aux;
 
 
-    int checkPDU(char* msgMB);		/* Verify if the address is valid */
-    int procReadReg(char* msgMB);	/* Procces the request and return the size */
+    int procReadReg(char* msgMB);	/* Handle the request and return the size */
+    int procReadInput(char* msgMB);	/* Handle the request and return the size */
     void updateRelays(void);	// Atualiza registro dos reles
 
 public:
