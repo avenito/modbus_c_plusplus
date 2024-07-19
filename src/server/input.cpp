@@ -5,6 +5,7 @@ int ModbusServer::procReadInput(char* msgMB){
 	int msgIndex = 4;
 	int startAdd;
 	int numInputs;
+	int len;
 
 	startAdd 	= msgMB[8] << 8  | msgMB[9];
 	numInputs  	= msgMB[10] << 8 | msgMB[11];

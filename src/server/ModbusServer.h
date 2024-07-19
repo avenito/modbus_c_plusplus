@@ -80,9 +80,12 @@ private:
     int 	newSocket;
     float	aux;
 
+	/* Handle the request and return the size */
+    int procReadReg(char* msgMB);
+    int procReadInput(char* msgMB);
+    int procReadDiscInput(char* msgMB);
+    int procReadCoil(char* msgMB);
 
-    int procReadReg(char* msgMB);	/* Handle the request and return the size */
-    int procReadInput(char* msgMB);	/* Handle the request and return the size */
     void updateRelays(void);	// Atualiza registro dos reles
 
 public:

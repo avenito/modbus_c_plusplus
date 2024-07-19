@@ -31,11 +31,23 @@ void signal_callback_handler(int signum) {
 /* Example */
 void Example(){
 	while(true){
+		/* Registers */
 		Server.registers[0]++;
+		Server.registers[1]--;
+
+		/* Inputs */
 		Server.inputs[3]++;
 		Server.inputs[5] += 2;
-		this_thread::sleep_for(std::chrono::milliseconds(500));
-		Server.registers[1]--;
+
+		/* Coils */
+		Server.coil[0] = !Server.coil[0];
+		Server.coil[6] = !Server.coil[0];
+
+		/* Discrete inputs */
+		Server.discrete_input[1] = !Server.discrete_input[1];
+		Server.discrete_input[4] = !Server.discrete_input[1];
+
+		this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 }
 

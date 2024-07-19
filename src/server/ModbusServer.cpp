@@ -114,50 +114,16 @@ void ModbusServer::runMbServer(void){
 				case READ_COILS:
 						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
 							cout << "READ_COILS" << endl;
-							cout << "Start Address: " << startAdd << endl;
-							cout << "Num. Coils: " << numRegs << endl;
 						}
-						msgIndex = 4;
-						len = 3 + ceil((double)numRegs /8);
-						if (DEBUG_LEVEL == DBG_LEVEL_03) {
-							cout << "Len answer: " << len << endl;
-						}
-						mbMsg[msgIndex++] = (unsigned) len >> 8;
-						mbMsg[msgIndex++] = (unsigned) len & 0xff;
-						mbMsg[msgIndex++] = (unsigned) uID & 0xff;
-						mbMsg[msgIndex++] = (unsigned) func & 0xff;
-						mbMsg[msgIndex++] = (unsigned) (ceil((double)numRegs /8)) & 0xff;
-//						for (int r = 0; r < numRegs; r++){
-//							if(reles[uID - 1].coil[startAdd + r]){
-//								mbMsg[msgIndex] = mbMsg[msgIndex] | (0x01 << r);
-//							}
-//						}
-
+						len = procReadCoil((char*)&mbMsg);
 						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 
 				case READ_DISCRETE_INPUTS:
 						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
 							cout << "READ_DISCRETE_INPUTS" << endl;
-							cout << "Start Address: " << startAdd << endl;
-							cout << "Num. Disc. Inputs: " << numRegs << endl;
 						}
-						msgIndex = 4;
-						len = 3 + ceil((double)numRegs /8);
-						if (DEBUG_LEVEL == DBG_LEVEL_03) {
-							cout << "Len answer: " << len << endl;
-						}
-						mbMsg[msgIndex++] = (unsigned) len >> 8;
-						mbMsg[msgIndex++] = (unsigned) len & 0xff;
-						mbMsg[msgIndex++] = (unsigned) uID & 0xff;
-						mbMsg[msgIndex++] = (unsigned) func & 0xff;
-						mbMsg[msgIndex++] = (unsigned) (ceil((double)numRegs /8)) & 0xff;
-//						for (int r = 0; r < numRegs; r++){
-//							if(reles[uID - 1].coil[startAdd + r]){
-//								mbMsg[msgIndex] = mbMsg[msgIndex] | (0x01 << r);
-//							}
-//						}
-
+						len = procReadDiscInput((char*)&mbMsg);
 						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 
