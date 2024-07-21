@@ -85,6 +85,8 @@ private:
     int procReadInput(char* msgMB);
     int procReadDiscInput(char* msgMB);
     int procReadCoil(char* msgMB);
+    int procWriteSingReg(char* msgMB);
+    int procWriteMultReg(char* msgMB);
 
     void updateRelays(void);	// Atualiza registro dos reles
 

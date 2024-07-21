@@ -154,14 +154,9 @@ void ModbusServer::runMbServer(void){
 				case WRITE_SINGLE_REGISTER:
 						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
 							cout << "WRITE_SINGLE_REGISTER" << endl;
-							cout << "Register Address: " << startAdd << endl;
-							cout << "Value: " << numRegs << endl;
 						}
-						msgIndex = 10;
-//						reles[uID - 1].regs[startAdd] = (unsigned) mbMsg[msgIndex++] << 8;
-//						reles[uID - 1].regs[startAdd] |= (unsigned) mbMsg[msgIndex++] & 0xff;
-
-						send(newSocket, (char*)&mbMsg, (12), 0);
+						len = procWriteSingReg((char*)&mbMsg);
+						send(newSocket, (char*)&mbMsg, (len), 0);
 						break;
 
 				case WRITE_MULTIPLE_REGISTERS:
@@ -170,17 +165,7 @@ void ModbusServer::runMbServer(void){
 							cout << "Start Address: " << startAdd << endl;
 							cout << "Num. Registers: " << numRegs << endl;
 						}
-						msgIndex = 13;
-//						for (int r = 0; r <= numRegs; r++){
-//							reles[uID - 1].regs[startAdd + r] = (unsigned) mbMsg[msgIndex++] << 8;
-//							reles[uID - 1].regs[startAdd + r] |= (unsigned) mbMsg[msgIndex++] & 0xff;
-//						}
-
-						msgIndex = 4;
-						len = 6;
-						mbMsg[msgIndex++] = (unsigned) len >> 8;
-						mbMsg[msgIndex++] = (unsigned) len & 0xff;
-
+						len = procWriteMultReg((char*)&mbMsg);
 						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 				default:
