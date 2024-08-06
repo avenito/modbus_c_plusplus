@@ -49,6 +49,14 @@ bool ModbusServer::init(int port) {
     return TRUE;
 }
 
+void ModbusServer::printFrame(char* mbMsg, int length) {
+	cout << "Length: " << length << endl;
+	for (int i = 0; i < length; i++) {
+		cout << "char[" << i << "]: ";
+		cout << (int) (mbMsg[i]) << endl;
+	}
+}
+
 void ModbusServer::runMbServer(void){
 
 	/* Wait for the client connection. */
@@ -90,20 +98,17 @@ void ModbusServer::runMbServer(void){
 			bytesRead = recv(newSocket, (char*)&mbMsg, sizeof(mbMsg), 0);
 
 			if (DEBUG_LEVEL == DBG_LEVEL_03) {
-				cout << "Bytes read: " << bytesRead << endl;
-				for (int i = 0; i < bytesRead; i++){
-					cout << "char[" << i << "]: ";
-					cout << (int)mbMsg[i] << endl;
-				}
+				cout << "Request:" << endl;
+				printFrame((char*)&mbMsg, bytesRead);
 			}
 
-			transID 	= mbMsg[0] << 8 | mbMsg[1];
-			protocol 	= mbMsg[2] << 8 | mbMsg[3];
-			len			= mbMsg[4] << 8 | mbMsg[5];
+//			transID 	= mbMsg[0] << 8 | mbMsg[1];
+//			protocol 	= mbMsg[2] << 8 | mbMsg[3];
+//			len			= mbMsg[4] << 8 | mbMsg[5];
 			uID			= (int) mbMsg[6];
 			func		= (int) mbMsg[7];
-			startAdd 	= mbMsg[8] << 8  | mbMsg[9];
-			numRegs  	= mbMsg[10] << 8 | mbMsg[11];
+//			startAdd 	= mbMsg[8] << 8  | mbMsg[9];
+//			numRegs  	= mbMsg[10] << 8 | mbMsg[11];
 
 			/* Selecting the function */
 			switch (func){
@@ -116,7 +121,11 @@ void ModbusServer::runMbServer(void){
 							cout << "READ_COILS" << endl;
 						}
 						len = procReadCoil((char*)&mbMsg);
-						send(newSocket, (char*)&mbMsg, (len + 6), 0);
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, len);
+						}
+						send(newSocket, (char*)&mbMsg, (len), 0);
 						break;
 
 				case READ_DISCRETE_INPUTS:
@@ -124,7 +133,11 @@ void ModbusServer::runMbServer(void){
 							cout << "READ_DISCRETE_INPUTS" << endl;
 						}
 						len = procReadDiscInput((char*)&mbMsg);
-						send(newSocket, (char*)&mbMsg, (len + 6), 0);
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, len);
+						}
+						send(newSocket, (char*)&mbMsg, (len), 0);
 						break;
 
 				case READ_HOLDING_REGISTERS:
@@ -132,6 +145,10 @@ void ModbusServer::runMbServer(void){
 							cout << "READ_HOLDING_REGISTERS" << endl;
 						}
 						len = procReadReg((char*)&mbMsg);
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, len);
+						}
 						send(newSocket, (char*)&mbMsg, len, 0);
 						break;
 
@@ -140,15 +157,23 @@ void ModbusServer::runMbServer(void){
 							cout << "READ_INPUT_REGISTERS" << endl;
 						}
 						len = procReadInput((char*)&mbMsg);
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, len);
+						}
 						send(newSocket, (char*)&mbMsg, len, 0);
 						break;
 
 				case WRITE_SINGLE_COIL:
 						if (DEBUG_LEVEL >= DBG_LEVEL_02) {
 							cout << "WRITE_SINGLE_COIL" << endl;
-							cout << "Output Address: " << startAdd << endl;
-							cout << "Value: " << numRegs << endl;
 						}
+						len = procWriteSingCoil((char*)&mbMsg);
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, len);
+						}
+						send(newSocket, (char*)&mbMsg, (len), 0);
 						break;
 
 				case WRITE_SINGLE_REGISTER:
@@ -156,6 +181,10 @@ void ModbusServer::runMbServer(void){
 							cout << "WRITE_SINGLE_REGISTER" << endl;
 						}
 						len = procWriteSingReg((char*)&mbMsg);
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, len);
+						}
 						send(newSocket, (char*)&mbMsg, (len), 0);
 						break;
 
@@ -166,6 +195,10 @@ void ModbusServer::runMbServer(void){
 							cout << "Num. Registers: " << numRegs << endl;
 						}
 						len = procWriteMultReg((char*)&mbMsg);
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, len);
+						}
 						send(newSocket, (char*)&mbMsg, (len + 6), 0);
 						break;
 				default:
@@ -174,6 +207,10 @@ void ModbusServer::runMbServer(void){
 						}
 						mbMsg[7] += 0x80;
 						mbMsg[8] = EXCEP_ILLEGAL_FUNCTION;
+						if (DEBUG_LEVEL == DBG_LEVEL_03) {
+							cout << "Response:" << endl;
+							printFrame((char*)&mbMsg, bytesRead);
+						}
 						send(newSocket, (char*)&mbMsg, 9, 0);
 			}
 		}

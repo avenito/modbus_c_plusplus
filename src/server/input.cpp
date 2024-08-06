@@ -22,7 +22,7 @@ int ModbusServer::procReadInput(char* msgMB){
 		/* Address limits ok */
 		len = 3 + numInputs * 2;
 		msgMB[msgIndex++] = (unsigned) len >> 8;
-		msgMB[msgIndex++] = (unsigned) len * 0xff;
+		msgMB[msgIndex++] = (unsigned) len & 0xff;
 		msgMB[msgIndex++] = (unsigned) msgMB[6] & 0xff;
 		msgMB[msgIndex++] = (unsigned) msgMB[7] & 0xff;
 		msgMB[msgIndex++] = (unsigned) (numInputs * 2) & 0xff;

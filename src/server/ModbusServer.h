@@ -39,7 +39,7 @@
 #define DBG_LEVEL_02				0x02
 #define DBG_LEVEL_03				0x03
 
-#define DEBUG_LEVEL					DBG_LEVEL_02
+#define DEBUG_LEVEL					DBG_LEVEL_03
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -85,8 +85,11 @@ private:
     int procReadInput(char* msgMB);
     int procReadDiscInput(char* msgMB);
     int procReadCoil(char* msgMB);
+    int procWriteSingCoil(char* msgMB);
     int procWriteSingReg(char* msgMB);
     int procWriteMultReg(char* msgMB);
+
+    void printFrame(char* msgMB, int bytesRead);
 
     void updateRelays(void);	// Atualiza registro dos reles
 

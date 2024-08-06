@@ -23,7 +23,7 @@ int ModbusServer::procReadReg(char* msgMB){
 		/* Address limits ok */
 		len = 3 + numRegs * 2;
 		msgMB[msgIndex++] = (unsigned) len >> 8;
-		msgMB[msgIndex++] = (unsigned) len * 0xff;
+		msgMB[msgIndex++] = (unsigned) len & 0xff;
 		msgMB[msgIndex++] = (unsigned) msgMB[6] & 0xff;
 		msgMB[msgIndex++] = (unsigned) msgMB[7] & 0xff;
 		msgMB[msgIndex++] = (unsigned) (numRegs * 2) & 0xff;
@@ -78,7 +78,7 @@ int ModbusServer::procWriteSingReg(char* msgMB){
 		}
 	}
 
-	return (len);
+	return (len + 6);
 }
 
 /* Write Multiple */
@@ -90,7 +90,7 @@ int ModbusServer::procWriteMultReg(char* msgMB){
 	int len;
 
 	startAddr = msgMB[8] << 8  | msgMB[9];
-	numRegs  = msgMB[10] << 8 | msgMB[11];
+	numRegs   = msgMB[10] << 8 | msgMB[11];
 
 	startAddr -= REGISTER_OFFSET;
 
@@ -120,5 +120,5 @@ int ModbusServer::procWriteMultReg(char* msgMB){
 		}
 	}
 
-	return (len);
+	return (len + 6);
 }

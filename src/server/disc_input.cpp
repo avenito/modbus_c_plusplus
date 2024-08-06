@@ -22,7 +22,7 @@ int ModbusServer::procReadDiscInput(char* msgMB){
 		/* Address limits ok */
 		len = 3 + ceil((double)numDiscInputs /8);
 		msgMB[msgIndex++] = (unsigned) len >> 8;
-		msgMB[msgIndex++] = (unsigned) len * 0xff;
+		msgMB[msgIndex++] = (unsigned) len & 0xff;
 		msgMB[msgIndex++] = (unsigned) msgMB[6] & 0xff;
 		msgMB[msgIndex++] = (unsigned) msgMB[7] & 0xff;
 		mbMsg[msgIndex++] = (unsigned) (ceil((double)numDiscInputs /8)) & 0xff;

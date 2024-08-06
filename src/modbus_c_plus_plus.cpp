@@ -40,8 +40,8 @@ void Example(){
 		Server.inputs[5] += 2;
 
 		/* Coils */
-		Server.coil[0] = !Server.coil[0];
-		Server.coil[6] = !Server.coil[0];
+//		Server.coil[0] = !Server.coil[0];
+//		Server.coil[6] = !Server.coil[0];
 
 		/* Discrete inputs */
 		Server.discrete_input[1] = !Server.discrete_input[1];
