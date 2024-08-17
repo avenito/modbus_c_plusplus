@@ -28,24 +28,62 @@ void signal_callback_handler(int signum) {
 	   exit(EXIT_SUCCESS);
 }
 
-/* Example */
+/* Example
+ * -------
+ *
+ * Inputs:
+ *
+ * 0 - Nivel Caixa 01
+ * 1 - Nivel Caixa 02
+ * 2 - Nivel Caixa 03
+ * 3 - RPM Bomba 01
+ * 4 - Valvula 01
+ * 5 - Valvula 02
+ *
+ * Registers:
+ *
+ * 0 - Ajuste RPM Bomba 01
+ * 1 - Ajuste valvula 01
+ * 2 - Ajuste valvula 02
+ *
+ * Dicrete-Inputs:
+ *
+ * 0 - Bomba ligada
+ * 1 - Caixa 01 transbordando
+ * 2 - Caixa 02 transbordando
+ * 3 - Caixa 03 transbordando
+ * 4 - Valvula 03
+ * 5 - Valvula 04
+ *
+ * Coils:
+ *
+ * 0 - Ligar Bomba
+ * 1 - Abre vavula 03
+ * 2 - Abre vavula 04
+ *
+ */
+
 void Example(){
 	while(true){
-		/* Registers */
-		Server.registers[0]++;
-		Server.registers[1]--;
 
-		/* Inputs */
-		Server.inputs[3]++;
-		Server.inputs[5] += 2;
+		Server.discrete_input[0] = Server.coil[0];
 
-		/* Coils */
-//		Server.coil[0] = !Server.coil[0];
-//		Server.coil[6] = !Server.coil[0];
+		if (Server.discrete_input[0]) {
+			if (Server.inputs[3] >= 100){
+				Server.inputs[3] = 100;
+			} else {
+				if (Server.inputs[3] == 0){Server.inputs[3] = 5;}
+				Server.inputs[3] += Server.inputs[3] * 0.5;
+			}
+		} else {
+			if (Server.inputs[3] <= 0){
+				Server.inputs[3] = 0;
+			} else {
+				Server.inputs[3] -= 25;
+			}
+		}
 
-		/* Discrete inputs */
-		Server.discrete_input[1] = !Server.discrete_input[1];
-		Server.discrete_input[4] = !Server.discrete_input[1];
+
 
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
