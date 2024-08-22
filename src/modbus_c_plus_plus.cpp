@@ -14,12 +14,18 @@
 
 #include "server/ModbusServer.h"
 
-#define	PORT	1501
+#define	PORT		1501
+#define VAZAO_CX01	5
+#define VAZAO_VL01	5
+#define VAZAO_VL02	5
+#define VAZAO_VL03	5
+#define VAZAO_VL04	5
 
 using namespace std;
 
 /* Instantiates the modbus server */
 ModbusServer	Server = ModbusServer();
+int	VzV01, VzV02;
 
 /* Declare the function to be called when pressing CTR+C to finish the program */
 void signal_callback_handler(int signum) {
@@ -63,9 +69,20 @@ void signal_callback_handler(int signum) {
  *
  */
 
+int CheckLimit(int value, int max, int min){
+	if (value > max){
+		return max;
+	}
+	if (value < min){
+		return min;
+	}
+	return value;
+}
+
 void Example(){
 	while(true){
 
+		/* Bomba 01 - Bombeia para Cx01 */
 		Server.discrete_input[0] = Server.coil[0];
 
 		if (Server.discrete_input[0]) {
@@ -83,7 +100,60 @@ void Example(){
 			}
 		}
 
+		/* Caixa 01 */
+		if (Server.discrete_input[0] && (Server.inputs[3] > 0)){
+			Server.inputs[0] += VAZAO_CX01;
+			if (Server.inputs[0] >= 100){
+				Server.discrete_input[1] = 1;
+			} else {
+				Server.discrete_input[1] = 0;
+			}
+		}
+		/* Valvula 01 ajustavel - Liga Cx01 - Cx02 */
+		Server.inputs[4] = Server.registers[1];
+		if (Server.inputs[4] > 0 && Server.inputs[0] > 0){
+			VzV01 = (VAZAO_VL01 * Server.inputs[4] / 100);
+			Server.inputs[0] -= VzV01; // esvazia Cx01
+			Server.inputs[1] += VzV01; // enche Cx02
+		}
+		/* Valvula 02 ajustavel - Liga Cx01 - Cx03 */
+		Server.inputs[5] = Server.registers[2];
+		if (Server.inputs[5] > 0 && Server.inputs[0] > 0){
+			VzV02 = (VAZAO_VL02 * Server.inputs[5] / 100);
+			Server.inputs[0] -= VzV02; // esvazia Cx01
+			Server.inputs[2] += VzV02; // enche Cx03
+		}
 
+		/* Valvula 03 on/off - Saida Cx02 */
+		Server.discrete_input[4] = Server.coil[1];
+		if (Server.discrete_input[4] && Server.inputs[1] > 0){
+			Server.inputs[1] -= VAZAO_VL03;
+		}
+		if (Server.inputs[1] >= 100){
+			Server.discrete_input[2] = 1;
+		} else {
+			Server.discrete_input[2] = 0;
+		}
+
+
+		/* Valvula 04 on/off - Saida Cx03 */
+		Server.discrete_input[5] = Server.coil[2];
+		if (Server.discrete_input[5] && Server.inputs[2] > 0){
+			Server.inputs[2] -= VAZAO_VL04;
+		}
+		if (Server.inputs[2] >= 100){
+			Server.discrete_input[3] = 1;
+		} else {
+			Server.discrete_input[3] = 0;
+		}
+
+		/* Check limites */
+		Server.inputs[0] = CheckLimit(Server.inputs[0], 100, 0);
+		Server.inputs[1] = CheckLimit(Server.inputs[1], 100, 0);
+		Server.inputs[2] = CheckLimit(Server.inputs[2], 100, 0);
+		Server.inputs[3] = CheckLimit(Server.inputs[3], 100, 0);
+		Server.inputs[4] = CheckLimit(Server.inputs[4], 100, 0);
+		Server.inputs[5] = CheckLimit(Server.inputs[5], 100, 0);
 
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}

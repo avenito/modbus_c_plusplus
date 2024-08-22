@@ -79,9 +79,9 @@ void ModbusServer::runMbServer(void){
     	if(newSocket < 0)
 		{
     		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-    			cerr << "Error accepting request from client!" << endl;
+    			cerr << "Error accepting request from client! Error: " << newSocket << endl;
     		}
-    		exit(1);
+    		//exit(1);
 		}
 
 		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
