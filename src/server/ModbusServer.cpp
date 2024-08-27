@@ -63,29 +63,31 @@ void ModbusServer::runMbServer(void){
 
     sockaddr_in newSocketAdd;
     socklen_t newSocketAddSize = sizeof(newSocketAdd);
+    int	l_connections = 0;
 
     /* This is an infinite loop. It finishes with CTR+C signal. */
     while(1){
     	bytesRead = 1;
 
 		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-			cout << "Waiting for a client to connect ..." << endl;
+			cout << endl << "Waiting for a client to connect ..." << endl;
 		}
 
     	/* Blocking function waiting the client connection.
     	 * That's why the modbus server must run as a thread. */
-    	newSocket = accept(mbServerSocket, (sockaddr *)&newSocketAdd, &newSocketAddSize);
 
-    	if(newSocket < 0)
+		newSocket = accept(mbServerSocket, (sockaddr *)&newSocketAdd, &newSocketAddSize);
+
+		if(newSocket < 0)
 		{
-    		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-    			cerr << "Error accepting request from client! Error: " << newSocket << endl;
-    		}
-    		//exit(1);
+			if (DEBUG_LEVEL >= DBG_LEVEL_01) {
+				cerr << "Error accepting request from client! <=============================================> Errno: " << errno << endl;
+			}
+			exit(0);
 		}
 
 		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-			cout << endl << "Client IP: " << inet_ntoa(newSocketAdd.sin_addr) <<  " connected. ";
+			cout << endl << "Client IP: " << inet_ntoa(newSocketAdd.sin_addr) <<  " connected. Connection "<< ++l_connections << " . ";
 			cout << "Waiting modbus request ..." << endl;
 		}
 
@@ -214,13 +216,14 @@ void ModbusServer::runMbServer(void){
 						send(newSocket, (char*)&mbMsg, 9, 0);
 			}
 		}
+
+		close(newSocket);
 	}
 
     //we need to close the socket descriptors after we're all done
-    close(newSocket);
-    close(mbServerSocket);
+
 	if (DEBUG_LEVEL >= DBG_LEVEL_02) {
-		cout << "Connection closed..." << endl;
+		cout << "Connection closed newSocket: " << close(newSocket) << " -- mbServerSocket: " << close(mbServerSocket) << endl;
 	}
 }
 
