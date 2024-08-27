@@ -103,12 +103,13 @@ void Example(){
 		/* Caixa 01 */
 		if (Server.discrete_input[0] && (Server.inputs[3] > 0)){
 			Server.inputs[0] += VAZAO_CX01;
-			if (Server.inputs[0] >= 100){
-				Server.discrete_input[1] = 1;
-			} else {
-				Server.discrete_input[1] = 0;
-			}
 		}
+		if (Server.inputs[0] >= 100){
+			Server.discrete_input[1] = 1;
+		} else {
+			Server.discrete_input[1] = 0;
+		}
+
 		/* Valvula 01 ajustavel - Liga Cx01 - Cx02 */
 		Server.inputs[4] = Server.registers[1];
 		if (Server.inputs[4] > 0 && Server.inputs[0] > 0){
