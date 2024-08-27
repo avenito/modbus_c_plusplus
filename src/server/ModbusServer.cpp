@@ -75,31 +75,15 @@ void ModbusServer::runMbServer(void){
 
     	/* Blocking function waiting the client connection.
     	 * That's why the modbus server must run as a thread. */
-		newSocket = -1;
 
-		while (newSocket < 0){
+		newSocket = accept(mbServerSocket, (sockaddr *)&newSocketAdd, &newSocketAddSize);
 
-			newSocket = accept(mbServerSocket, (sockaddr *)&newSocketAdd, &newSocketAddSize);
-
-			if(newSocket < 0)
-			{
-	    		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-	    			cerr << "Error accepting request from client! <=============================================> Errno: " << errno << endl;
-	    		}
-				exit(0);
-
-	    		close(newSocket);
-    		    close(mbServerSocket);
-
-    		    if (init(port)){
-    				cout << endl << "Modbus server initialized and listening to port " << getPort() << "." << endl;
-    			} else {
-    				cout << "Error!!!" << endl;
-    				exit(0);
-    			}
-	    		//exit(1);
-
+		if(newSocket < 0)
+		{
+			if (DEBUG_LEVEL >= DBG_LEVEL_01) {
+				cerr << "Error accepting request from client! <=============================================> Errno: " << errno << endl;
 			}
+			exit(0);
 		}
 
 		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
@@ -232,6 +216,8 @@ void ModbusServer::runMbServer(void){
 						send(newSocket, (char*)&mbMsg, 9, 0);
 			}
 		}
+
+		close(newSocket);
 	}
 
     //we need to close the socket descriptors after we're all done
