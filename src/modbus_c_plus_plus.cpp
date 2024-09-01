@@ -45,27 +45,42 @@ void signal_callback_handler(int signum) {
  * 3 - RPM Bomba 01
  * 4 - Valvula 01
  * 5 - Valvula 02
+ * 6 - Valvula 03
  *
- * Registers:
+ */
+
+#define Nivel_Cx01		Server.inputs[0]
+#define Nivel_Cx02		Server.inputs[1]
+#define Nivel_Cx03		Server.inputs[2]
+#define RPM_FB			Server.inputs[3]
+#define Valv01_FB		Server.inputs[4]
+#define Valv02_FB		Server.inputs[5]
+#define Valv03_FB		Server.inputs[6]
+
+/* Registers:
  *
  * 0 - Ajuste RPM Bomba 01
  * 1 - Ajuste valvula 01
  * 2 - Ajuste valvula 02
+ * 3 - Ajuste valvula 03
  *
- * Dicrete-Inputs:
+ */
+
+
+
+/* Dicrete-Inputs:
  *
  * 0 - Bomba ligada
  * 1 - Caixa 01 transbordando
  * 2 - Caixa 02 transbordando
  * 3 - Caixa 03 transbordando
- * 4 - Valvula 03
- * 5 - Valvula 04
+ * 4 - Caixa 01 baixo nivel
+ * 5 - Caixa 02 baixo nivel
+ * 6 - Caixa 03 baixo nivel
  *
  * Coils:
  *
  * 0 - Ligar Bomba
- * 1 - Abre vavula 03
- * 2 - Abre vavula 04
  *
  */
 
@@ -102,9 +117,9 @@ void Example(){
 
 		/* Caixa 01 */
 		if (Server.discrete_input[0] && (Server.inputs[3] > 0)){
-			Server.inputs[0] += VAZAO_CX01;
+			Nivel_Cx01 += VAZAO_CX01;
 		}
-		if (Server.inputs[0] >= 100){
+		if (Nivel_Cx01 >= 100){
 			Server.discrete_input[1] = 1;
 		} else {
 			Server.discrete_input[1] = 0;
@@ -112,25 +127,25 @@ void Example(){
 
 		/* Valvula 01 ajustavel - Liga Cx01 - Cx02 */
 		Server.inputs[4] = Server.registers[1];
-		if (Server.inputs[4] > 0 && Server.inputs[0] > 0){
+		if (Server.inputs[4] > 0 && Nivel_Cx01 > 0){
 			VzV01 = (VAZAO_VL01 * Server.inputs[4] / 100);
-			Server.inputs[0] -= VzV01; // esvazia Cx01
-			Server.inputs[1] += VzV01; // enche Cx02
+			Nivel_Cx01 -= VzV01; // esvazia Cx01
+			Nivel_Cx02 += VzV01; // enche Cx02
 		}
 		/* Valvula 02 ajustavel - Liga Cx01 - Cx03 */
 		Server.inputs[5] = Server.registers[2];
-		if (Server.inputs[5] > 0 && Server.inputs[0] > 0){
+		if (Server.inputs[5] > 0 && Nivel_Cx01 > 0){
 			VzV02 = (VAZAO_VL02 * Server.inputs[5] / 100);
-			Server.inputs[0] -= VzV02; // esvazia Cx01
-			Server.inputs[2] += VzV02; // enche Cx03
+			Nivel_Cx01 -= VzV02; // esvazia Cx01
+			Nivel_Cx03 += VzV02; // enche Cx03
 		}
 
 		/* Valvula 03 on/off - Saida Cx02 */
 		Server.discrete_input[4] = Server.coil[1];
-		if (Server.discrete_input[4] && Server.inputs[1] > 0){
-			Server.inputs[1] -= VAZAO_VL03;
+		if (Server.discrete_input[4] && Nivel_Cx02 > 0){
+			Nivel_Cx02 -= VAZAO_VL03;
 		}
-		if (Server.inputs[1] >= 100){
+		if (Nivel_Cx02 >= 100){
 			Server.discrete_input[2] = 1;
 		} else {
 			Server.discrete_input[2] = 0;
@@ -139,19 +154,19 @@ void Example(){
 
 		/* Valvula 04 on/off - Saida Cx03 */
 		Server.discrete_input[5] = Server.coil[2];
-		if (Server.discrete_input[5] && Server.inputs[2] > 0){
-			Server.inputs[2] -= VAZAO_VL04;
+		if (Server.discrete_input[5] && Nivel_Cx03 > 0){
+			Nivel_Cx03 -= VAZAO_VL04;
 		}
-		if (Server.inputs[2] >= 100){
+		if (Nivel_Cx03 >= 100){
 			Server.discrete_input[3] = 1;
 		} else {
 			Server.discrete_input[3] = 0;
 		}
 
 		/* Check limites */
-		Server.inputs[0] = CheckLimit(Server.inputs[0], 100, 0);
-		Server.inputs[1] = CheckLimit(Server.inputs[1], 100, 0);
-		Server.inputs[2] = CheckLimit(Server.inputs[2], 100, 0);
+		Nivel_Cx01 = CheckLimit(Nivel_Cx01, 100, 0);
+		Nivel_Cx02 = CheckLimit(Nivel_Cx02, 100, 0);
+		Nivel_Cx03 = CheckLimit(Nivel_Cx03, 100, 0);
 		Server.inputs[3] = CheckLimit(Server.inputs[3], 100, 0);
 		Server.inputs[4] = CheckLimit(Server.inputs[4], 100, 0);
 		Server.inputs[5] = CheckLimit(Server.inputs[5], 100, 0);
