@@ -1,32 +1,33 @@
 # C++ Modbus Server
 
-##### click [here](README_EN.md) for English version
+##### clique [aqui](README_PT.md) para ver a versão em português
 
-[Objetivo](#objetivo)  
-[Motivação](#motivacao)  
-[Instalação](#instalacao)  
-[Baixando o binário](#binario)  
-
-
-## Objetivo <a name="objetivo"></a>  
-
-A ideia deste projeto é escrever um servidor *modbus TCP* em C++ para rodar no Raspiberry Pi. O objetivo aqui é ser o mais didático possível, portanto existem muitos comentários ao longo do código.  
-Não me preocupei com performance ou em seguir *Design Patterns*, embora sugestões para melhorar o código serjam muito bem vindas.  
-Há também um exemplo de aplicação para facilitar a compreensão de como pode ser utilizado.  
+[Goal](#objetivo)  
+[Motivation](#motivacao)  
+[Installation](#instalacao)  
+[Download bin](#binario)  
 
 
-## Motivação <a name="motivacao"></a>  
+## Goal <a name="objetivo"></a>
 
-Não encontrei facilmente uma implementação de servidor *modbus TCP* em C++, por isso resolvi escrever a minha própria. No entanto, encontrei esse belo trabalho do [Mazurel](https://github.com/Mazurel/Modbus), que sugiro ser utilizado também como uma referência em seus estudos.
+The idea of this project is to write a *modbus TCP* server in C++ to run on the Raspiberry Pi. The aim here is to be as didactic as possible, so there are lots of comments throughout the code.  
+My mother tongue is Portuguese, so you can find comments in both languages, English and Portuguese.  
+I haven't worried about performance or following *Design Patterns*, although suggestions for improving the code are very welcome.  
+There is also an example application to make it easier to understand how it can be used.  
 
 
-## Instalação <a name="instalacao"></a>
+## Motivation <a name="motivacao"></a>
 
-Se quiser baixar e compilar o código, sugiro esta página para o setup do ambiente de desenvolvimento. 
+I couldn't easily find an implementation of a *modbus TCP* server in C++, so I decided to write my own. However, I did find this nice work by [Mazurel](https://github.com/Mazurel/Modbus), which I suggest you also use as a reference in your studies.
+
+
+## Installation <a name="instalacao"></a>
+
+If you want to download and compile the code, I suggest this page to configure the development environment. 
 
 - [Raspberry pi development setup on Eclipse [Linux] and Debugging via SSH](https://medium.com/@eternalamit5/raspberry-pi-development-setup-on-eclipse-linux-and-debugging-via-ssh-a1927852e3a2).
 
 
-## Baixando o binário <a name="binario"></a>
+## Download bin <a name="binario"></a>
 
-Caso voce queira somente utilizar o binário da aplicação de exemplo, basta fazer o download ... (WiP)
+If you only want to use the binary of the example application, just download it here ... (WiP)
