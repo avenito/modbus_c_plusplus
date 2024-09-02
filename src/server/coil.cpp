@@ -27,7 +27,7 @@ int ModbusServer::procReadCoil(char* msgMB){
 		msgMB[msgIndex++] = (unsigned) msgMB[7] & 0xff;
 		msgMB[msgIndex++] = (unsigned) (ceil((double)numCoils /8)) & 0xff;
 		for (int r = 0; r < numCoils; r++){
-			if(coil[startAdd + r]){
+			if(coils[startAdd + r]){
 				msgMB[msgIndex] = msgMB[msgIndex] | (0x01 << r);
 			}
 		}
@@ -66,7 +66,7 @@ int ModbusServer::procWriteSingCoil(char* msgMB){
 	if ((startAdd >= 0) && (startAdd <= COILS)) {
 		/* Address limits ok */
 		len = 6;
-		coil[addr] = val;
+		coils[addr] = val;
 	} else {
 		/*Out of the address limits */
 		msgMB[7] += 0x80;

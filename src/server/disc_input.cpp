@@ -27,7 +27,7 @@ int ModbusServer::procReadDiscInput(char* msgMB){
 		msgMB[msgIndex++] = (unsigned) msgMB[7] & 0xff;
 		mbMsg[msgIndex++] = (unsigned) (ceil((double)numDiscInputs /8)) & 0xff;
 		for (int r = 0; r <= numDiscInputs; r++){
-			if(discrete_input[startAdd + r]){
+			if(discrete_inputs[startAdd + r]){
 				mbMsg[msgIndex] = mbMsg[msgIndex] | (0x01 << r);
 			}
 		}

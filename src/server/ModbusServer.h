@@ -97,8 +97,8 @@ private:
 public:
 
     /* Discrete inputs, coils, registers and inputs */
-	bool	coil[COILS];
-	bool	discrete_input[DISCRETE_INPUTS];
+	bool	coils[COILS];
+	bool	discrete_inputs[DISCRETE_INPUTS];
 	int		inputs[INPUTS];
 	int		registers[REGISTERS];
 

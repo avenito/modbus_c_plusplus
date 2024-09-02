@@ -46,7 +46,6 @@ void signal_callback_handler(int signum) {
  * 4 - Valvula 01
  * 5 - Valvula 02
  * 6 - Valvula 03
- *
  */
 
 #define Nivel_Cx01		Server.inputs[0]
@@ -63,10 +62,12 @@ void signal_callback_handler(int signum) {
  * 1 - Ajuste valvula 01
  * 2 - Ajuste valvula 02
  * 3 - Ajuste valvula 03
- *
  */
 
-
+#define Ajuste_RPM		Server.registers[0]
+#define Ajuste_Valv01	Server.registers[1]
+#define Ajuste_Valv02	Server.registers[2]
+#define Ajuste_Valv03	Server.registers[3]
 
 /* Dicrete-Inputs:
  *
@@ -77,12 +78,23 @@ void signal_callback_handler(int signum) {
  * 4 - Caixa 01 baixo nivel
  * 5 - Caixa 02 baixo nivel
  * 6 - Caixa 03 baixo nivel
- *
- * Coils:
+ */
+
+#define Bomba_Ligada	Server.discrete_inputs[0]
+#define Cx01_Transb		Server.discrete_inputs[1]
+#define Cx02_Transb		Server.discrete_inputs[2]
+#define Cx03_Transb		Server.discrete_inputs[3]
+#define Cx01_Baixo		Server.discrete_inputs[4]
+#define Cx02_Baixo		Server.discrete_inputs[5]
+#define Cx03_Baixo		Server.discrete_inputs[6]
+
+/* Coils:
  *
  * 0 - Ligar Bomba
- *
  */
+
+#define Liga_Bomba		Server.coils[0]
+
 
 int CheckLimit(int value, int max, int min){
 	if (value > max){
@@ -98,78 +110,78 @@ void Example(){
 	while(true){
 
 		/* Bomba 01 - Bombeia para Cx01 */
-		Server.discrete_input[0] = Server.coil[0];
+		Bomba_Ligada = Server.coils[0];
 
-		if (Server.discrete_input[0]) {
-			if (Server.inputs[3] >= 100){
-				Server.inputs[3] = 100;
+		if (Bomba_Ligada) {
+			if (RPM_FB >= 100){
+				RPM_FB = 100;
 			} else {
-				if (Server.inputs[3] == 0){Server.inputs[3] = 5;}
-				Server.inputs[3] += Server.inputs[3] * 0.5;
+				if (RPM_FB == 0){RPM_FB = 5;}
+				RPM_FB += RPM_FB * 0.5;
 			}
 		} else {
-			if (Server.inputs[3] <= 0){
-				Server.inputs[3] = 0;
+			if (RPM_FB <= 0){
+				RPM_FB = 0;
 			} else {
-				Server.inputs[3] -= 25;
+				RPM_FB -= 25;
 			}
 		}
 
 		/* Caixa 01 */
-		if (Server.discrete_input[0] && (Server.inputs[3] > 0)){
+		if (Server.discrete_inputs[0] && (RPM_FB > 0)){
 			Nivel_Cx01 += VAZAO_CX01;
 		}
 		if (Nivel_Cx01 >= 100){
-			Server.discrete_input[1] = 1;
+			Cx01_Transb = 1;
 		} else {
-			Server.discrete_input[1] = 0;
+			Cx01_Transb = 0;
 		}
 
 		/* Valvula 01 ajustavel - Liga Cx01 - Cx02 */
-		Server.inputs[4] = Server.registers[1];
-		if (Server.inputs[4] > 0 && Nivel_Cx01 > 0){
-			VzV01 = (VAZAO_VL01 * Server.inputs[4] / 100);
+		Valv01_FB = Ajuste_Valv01;
+		if (Valv01_FB > 0 && Nivel_Cx01 > 0){
+			VzV01 = (VAZAO_VL01 * Valv01_FB / 100);
 			Nivel_Cx01 -= VzV01; // esvazia Cx01
 			Nivel_Cx02 += VzV01; // enche Cx02
 		}
 		/* Valvula 02 ajustavel - Liga Cx01 - Cx03 */
-		Server.inputs[5] = Server.registers[2];
-		if (Server.inputs[5] > 0 && Nivel_Cx01 > 0){
-			VzV02 = (VAZAO_VL02 * Server.inputs[5] / 100);
+		Valv02_FB = Ajuste_Valv02;
+		if (Valv02_FB > 0 && Nivel_Cx01 > 0){
+			VzV02 = (VAZAO_VL02 * Valv02_FB / 100);
 			Nivel_Cx01 -= VzV02; // esvazia Cx01
 			Nivel_Cx03 += VzV02; // enche Cx03
 		}
 
 		/* Valvula 03 on/off - Saida Cx02 */
-		Server.discrete_input[4] = Server.coil[1];
+		Server.discrete_inputs[4] = Server.coil[1];
 		if (Server.discrete_input[4] && Nivel_Cx02 > 0){
 			Nivel_Cx02 -= VAZAO_VL03;
 		}
 		if (Nivel_Cx02 >= 100){
-			Server.discrete_input[2] = 1;
+			Server.discrete_inputs[2] = 1;
 		} else {
-			Server.discrete_input[2] = 0;
+			Server.discrete_inputs[2] = 0;
 		}
 
 
 		/* Valvula 04 on/off - Saida Cx03 */
-		Server.discrete_input[5] = Server.coil[2];
-		if (Server.discrete_input[5] && Nivel_Cx03 > 0){
+		Server.discrete_inputs[5] = Server.coil[2];
+		if (Server.discrete_inputs[5] && Nivel_Cx03 > 0){
 			Nivel_Cx03 -= VAZAO_VL04;
 		}
 		if (Nivel_Cx03 >= 100){
-			Server.discrete_input[3] = 1;
+			Server.discrete_inputs[3] = 1;
 		} else {
-			Server.discrete_input[3] = 0;
+			Server.discrete_inputs[3] = 0;
 		}
 
 		/* Check limites */
 		Nivel_Cx01 = CheckLimit(Nivel_Cx01, 100, 0);
 		Nivel_Cx02 = CheckLimit(Nivel_Cx02, 100, 0);
 		Nivel_Cx03 = CheckLimit(Nivel_Cx03, 100, 0);
-		Server.inputs[3] = CheckLimit(Server.inputs[3], 100, 0);
-		Server.inputs[4] = CheckLimit(Server.inputs[4], 100, 0);
-		Server.inputs[5] = CheckLimit(Server.inputs[5], 100, 0);
+		RPM_FB = CheckLimit(RPM_FB, 100, 0);
+		Valv01_FB = CheckLimit(Valv01_FB, 100, 0);
+		Valv02_FB = CheckLimit(Valv02_FB, 100, 0);
 
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
