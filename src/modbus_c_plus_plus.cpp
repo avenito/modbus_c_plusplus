@@ -16,11 +16,11 @@
 #include "server/ModbusServer.h"
 
 #define	PORT			1501
-#define FLOWRATE_TK01	5
+#define FLOWRATE_PM01	4
 #define FLOWRATE_VL01	5
 #define FLOWRATE_VL02	5
 #define FLOWRATE_VL03	5
-#define FLOWRATE_VL04	5
+#define	MIN_RPM			30
 
 using namespace std;
 
@@ -28,7 +28,7 @@ using namespace std;
 /* Instancia o modbus server */
 
 ModbusServer	Server = ModbusServer();
-int				FRV01, FRV02;
+int				FRV01, FRV02, FRV03;
 
 /* Declare the function to be called when pressing CTR+C to finish the program */
 /* Declara a função para ser chamda quando pressionarmos CTR+C para terminar o programa */
@@ -44,9 +44,9 @@ void signal_callback_handler(int signum) {
  *
  * Inputs:
  *
- * 0 - Level Tank 01 / Nível Caixa 01
- * 1 - Level Tank 02 / Nível Caixa 02
- * 2 - Level Tank 03 / Nível Caixa 03
+ * 0 - Level Tank 01 / Nível Tanque 01
+ * 1 - Level Tank 02 / Nível Tanque 02
+ * 2 - Level Tank 03 / Nível Tanque 03
  * 3 - RPM Pump 01 / RPM Bomba 01
  * 4 - Valve 01 / Válvula 01
  * 5 - Valve 02 / Válvula 02
@@ -77,31 +77,31 @@ void signal_callback_handler(int signum) {
 /* Dicrete-Inputs:
  *
  * 0 - Pump 01 ON / Bomba 01 ON
- * 1 - Tank 01 overflowing / Caixa 01 transbordando
- * 2 - Caixa 02 transbordando
- * 3 - Caixa 03 transbordando
- * 4 - Caixa 01 nível baixo
- * 5 - Caixa 02 nível baixo
- * 6 - Caixa 03 nível baixo
+ * 1 - Tank 01 overflowing / Tanque 01 transbordando
+ * 2 - Tank 02 overflowing / Tanque 02 transbordando
+ * 3 - Tank 03 overflowing / Tanque 03 transbordando
+ * 4 - Tank 01 low level / Tanque 01 nível baixo
+ * 5 - Tank 01 low level / Tanque 02 nível baixo
+ * 6 - Tank 01 low level / Tanque 03 nível baixo
  */
 
-#define Bomba_Ligada	Server.discrete_inputs[0]
-#define Cx01_Transb		Server.discrete_inputs[1]
-#define Cx02_Transb		Server.discrete_inputs[2]
-#define Cx03_Transb		Server.discrete_inputs[3]
-#define Cx01_Baixo		Server.discrete_inputs[4]
-#define Cx02_Baixo		Server.discrete_inputs[5]
-#define Cx03_Baixo		Server.discrete_inputs[6]
+#define Pump01_ON		Server.discrete_inputs[0]
+#define Tk01_Overflow	Server.discrete_inputs[1]
+#define Tk02_Overflow	Server.discrete_inputs[2]
+#define Tk03_Overflow	Server.discrete_inputs[3]
+#define Tk01_Lowlevel	Server.discrete_inputs[4]
+#define Tk02_Lowlevel	Server.discrete_inputs[5]
+#define Tk03_Lowlevel	Server.discrete_inputs[6]
 
 /* Coils:
  *
- * 0 - Ligar Bomba
+ * 0 - Turn Pump 01 ON / Ligar Bomba
  */
 
-#define Liga_Bomba		Server.coils[0]
+#define Set_Pump01_ON		Server.coils[0]
 
 
-int CheckLimit(int value, int max, int min){
+int CheckLimit(int min, int value, int max){
 	if (value > max){
 		return max;
 	}
@@ -112,81 +112,99 @@ int CheckLimit(int value, int max, int min){
 }
 
 void Example(){
+
 	while(true){
 
-		/* Bomba 01 - Bombeia para Cx01 */
-		Bomba_Ligada = Liga_Bomba;
+		/* Pump 01 / Bomba 01 */
+		Pump01_ON = Set_Pump01_ON;
 
-		if (Bomba_Ligada) {
-			if (RPM_FB >= 100){
-				RPM_FB = 100;
-			} else {
-				if (RPM_FB == 0){RPM_FB = 5;}
-				RPM_FB += RPM_FB * 0.5;
+		if (Pump01_ON) {
+			if (RPM_FB == 0){RPM_FB = 5;}
+			RPM_FB += RPM_FB * 0.5;
+			if (RPM_FB >= MIN_RPM){
+				RPM_FB = CheckLimit(MIN_RPM, Setpoint_RPM, 100);
 			}
 		} else {
-			if (RPM_FB <= 0){
-				RPM_FB = 0;
+			RPM_FB -= 25;
+			RPM_FB = CheckLimit(0, RPM_FB, 100);
+		}
+
+		/* Tank 01 / Tanque 01 */
+		if (Pump01_ON && (RPM_FB > 0)){
+			Level_Tk01 += RPM_FB * FLOWRATE_PM01 * 0.1;
+		}
+
+		if (Level_Tk01 >= 1000){
+			Tk01_Overflow = 1;
+		} else {
+			Tk01_Overflow = 0;
+			if (Level_Tk01 <= 50){
+				Tk01_Lowlevel = 1;
 			} else {
-				RPM_FB -= 25;
+				Tk01_Lowlevel = 0;
 			}
 		}
 
-		/* Caixa 01 */
-		if (Bomba_Ligada && (RPM_FB > 0)){
-			Level_Tk01 += FLOWRATE_TK01;
-		}
-		if (Level_Tk01 >= 100){
-			Cx01_Transb = 1;
-		} else {
-			Cx01_Transb = 0;
-		}
+		Level_Tk01 = CheckLimit(0, Level_Tk01, 1000);
 
-		/* Valvula 01 ajustavel - Liga Cx01 - Cx02 */
+
+		/* Valve 01 connects Tank 01 to Tank 02 / Válvula 01 interliga Tanque 01 com Tanque 02 */
 		Valv01_FB = Setpoint_Valv01;
+
 		if (Valv01_FB > 0 && Level_Tk01 > 0){
-			FRV01 = (FLOWRATE_VL01 * Valv01_FB / 100);
-			Level_Tk01 -= FRV01; // esvazia Cx01
-			Level_Tk02 += FRV01; // enche Cx02
+			FRV01 = FLOWRATE_VL01 * Valv01_FB * 0.1;
+			Level_Tk01 -= FRV01;
+			Level_Tk02 += FRV01;
 		}
-		/* Valvula 02 ajustavel - Liga Cx01 - Cx03 */
+
+		Valv01_FB = CheckLimit(0, Valv01_FB, 100);
+
+		if (Level_Tk02 >= 1000){
+			Tk02_Overflow = 1;
+		} else {
+			Tk02_Overflow = 0;
+			if (Level_Tk02 <= 5){
+				Tk02_Lowlevel = 1;
+			} else {
+				Tk02_Lowlevel = 0;
+			}
+		}
+
+		Level_Tk02 = CheckLimit(0, Level_Tk02, 1000);
+
+
+		/* Valve 02 connects Tank 02 to Tank 03 / Válvula 02 interliga Tanque 02 com Tanque 03 */
 		Valv02_FB = Setpoint_Valv02;
-		if (Valv02_FB > 0 && Level_Tk01 > 0){
-			FRV02 = (FLOWRATE_VL02 * Valv02_FB / 100);
-			Level_Tk01 -= FRV02; // esvazia Cx01
-			Level_Tk03 += FRV02; // enche Cx03
+		if (Valv02_FB > 0 && Level_Tk02 > 0){
+			FRV02 = FLOWRATE_VL02 * Valv02_FB * 0.1;
+			Level_Tk02 -= FRV02;
+			Level_Tk03 += FRV02;
 		}
 
-		/* Valvula 03 on/off - Saida Cx02 */
-		Cx01_Baixo = Server.coils[1];
-		if (Cx01_Baixo && Level_Tk02 > 0){
-			Level_Tk02 -= FLOWRATE_VL03;
+		Valv02_FB = CheckLimit(0, Valv02_FB, 100);
+
+
+		/* Valve 03 is the Tank 03 output / Válvula 03 é a saída do Tanque 03 */
+		Valv03_FB = Setpoint_Valv03;
+		if (Valv03_FB > 0 && Level_Tk03 > 0){
+			FRV03 = FLOWRATE_VL03 * Valv03_FB * 0.1;
+			Level_Tk03 -= FRV03;
 		}
-		if (Level_Tk02 >= 100){
-			Cx02_Transb = 1;
+
+		Valv03_FB = CheckLimit(0, Valv02_FB, 100);
+
+		if (Level_Tk03 >= 1000){
+			Tk03_Overflow = 1;
 		} else {
-			Cx02_Transb = 0;
+			Tk03_Overflow = 0;
+			if (Level_Tk03 <= 5){
+				Tk03_Lowlevel = 1;
+			} else {
+				Tk03_Lowlevel = 0;
+			}
 		}
 
-
-		/* Valvula 04 on/off - Saida Cx03 */
-		Server.discrete_inputs[5] = Server.coils[2];
-		if (Server.discrete_inputs[5] && Level_Tk03 > 0){
-			Level_Tk03 -= FLOWRATE_VL04;
-		}
-		if (Level_Tk03 >= 100){
-			Cx03_Transb = 1;
-		} else {
-			Cx03_Transb = 0;
-		}
-
-		/* Check limites */
-		Level_Tk01 = CheckLimit(Level_Tk01, 100, 0);
-		Level_Tk02 = CheckLimit(Level_Tk02, 100, 0);
-		Level_Tk03 = CheckLimit(Level_Tk03, 100, 0);
-		RPM_FB = CheckLimit(RPM_FB, 100, 0);
-		Valv01_FB = CheckLimit(Valv01_FB, 100, 0);
-		Valv02_FB = CheckLimit(Valv02_FB, 100, 0);
+		Level_Tk03 = CheckLimit(0, Level_Tk03, 1000);
 
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}

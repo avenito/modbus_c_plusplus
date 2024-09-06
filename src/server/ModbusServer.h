@@ -39,7 +39,7 @@
 #define DBG_LEVEL_02				0x02
 #define DBG_LEVEL_03				0x03
 
-#define DEBUG_LEVEL					DBG_LEVEL_03
+#define DEBUG_LEVEL					DBG_LEVEL_01
 
 #include <sys/socket.h>
 #include <netinet/in.h>

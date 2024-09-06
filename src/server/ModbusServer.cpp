@@ -70,7 +70,7 @@ void ModbusServer::runMbServer(void){
     	bytesRead = 1;
 
 		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-			cout << endl << "Waiting for a client to connect ..." << endl;
+			cout << endl << "Waiting for a client to connect ...";
 		}
 
     	/* Blocking function waiting the client connection.
@@ -87,7 +87,7 @@ void ModbusServer::runMbServer(void){
 		}
 
 		if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-			cout << endl << "Client IP: " << inet_ntoa(newSocketAdd.sin_addr) <<  " connected. Connection "<< ++l_connections << " . ";
+			cout << endl << "Client IP: " << inet_ntoa(newSocketAdd.sin_addr) <<  " connected. Connection "<< ++l_connections << ". ";
 			cout << "Waiting modbus request ..." << endl;
 		}
 
