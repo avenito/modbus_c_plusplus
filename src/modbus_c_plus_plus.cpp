@@ -17,9 +17,9 @@
 
 #define	PORT			1501
 #define FLOWRATE_PM01	4
-#define FLOWRATE_VL01	5
-#define FLOWRATE_VL02	5
-#define FLOWRATE_VL03	5
+#define FLOWRATE_VL01	6
+#define FLOWRATE_VL02	6
+#define FLOWRATE_VL03	6
 #define	MIN_RPM			30
 
 using namespace std;
@@ -145,7 +145,6 @@ void Example(){
 			}
 		}
 
-		Level_Tk01 = CheckLimit(0, Level_Tk01, 1000);
 
 
 		/* Valve 01 connects Tank 01 to Tank 02 / Válvula 01 interliga Tanque 01 com Tanque 02 */
@@ -163,14 +162,12 @@ void Example(){
 			Tk02_Overflow = 1;
 		} else {
 			Tk02_Overflow = 0;
-			if (Level_Tk02 <= 5){
+			if (Level_Tk02 <= 50){
 				Tk02_Lowlevel = 1;
 			} else {
 				Tk02_Lowlevel = 0;
 			}
 		}
-
-		Level_Tk02 = CheckLimit(0, Level_Tk02, 1000);
 
 
 		/* Valve 02 connects Tank 02 to Tank 03 / Válvula 02 interliga Tanque 02 com Tanque 03 */
@@ -191,19 +188,22 @@ void Example(){
 			Level_Tk03 -= FRV03;
 		}
 
-		Valv03_FB = CheckLimit(0, Valv02_FB, 100);
+		Valv03_FB = CheckLimit(0, Valv03_FB, 100);
 
 		if (Level_Tk03 >= 1000){
 			Tk03_Overflow = 1;
 		} else {
 			Tk03_Overflow = 0;
-			if (Level_Tk03 <= 5){
+			if (Level_Tk03 <= 50){
 				Tk03_Lowlevel = 1;
 			} else {
 				Tk03_Lowlevel = 0;
 			}
 		}
 
+
+		Level_Tk01 = CheckLimit(0, Level_Tk01, 1000);
+		Level_Tk02 = CheckLimit(0, Level_Tk02, 1000);
 		Level_Tk03 = CheckLimit(0, Level_Tk03, 1000);
 
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
