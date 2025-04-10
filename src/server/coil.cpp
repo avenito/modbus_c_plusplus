@@ -18,8 +18,10 @@ int ModbusServer::procReadCoil(char* msgMB){
 	}
 
 	/* Checking the address limit */
+	/* Verifica os limites  */
 	if ((startAdd >= 0) && ((startAdd + numCoils) <= COILS)) {
 		/* Address limits ok */
+		/* Dentro dos limites */
 		len = 3 + ceil((double)numCoils /8);
 		msgMB[msgIndex++] = (unsigned) len >> 8;
 		msgMB[msgIndex++] = (unsigned) len & 0xff;
@@ -32,7 +34,8 @@ int ModbusServer::procReadCoil(char* msgMB){
 			}
 		}
 	} else {
-		/*Out of the address limits */
+		/* Out of the address limits */
+		/* Fora dos limites */
 		msgMB[7] += 0x80;
 		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;
@@ -45,6 +48,7 @@ int ModbusServer::procReadCoil(char* msgMB){
 }
 
 /* Write Single Coil */
+/* Escreve um coil */
 int ModbusServer::procWriteSingCoil(char* msgMB){
 
 	int msgIndex = 10;
@@ -63,12 +67,15 @@ int ModbusServer::procWriteSingCoil(char* msgMB){
 	}
 
 	/* Checking the address limit */
+	/* Verifica os limites */
 	if ((startAdd >= 0) && (startAdd <= COILS)) {
 		/* Address limits ok */
+		/* Dentro dos limites */
 		len = 6;
 		coils[addr] = val;
 	} else {
 		/*Out of the address limits */
+		/* Fora dos limites */
 		msgMB[7] += 0x80;
 		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;

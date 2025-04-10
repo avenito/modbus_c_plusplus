@@ -1,2 +1,5 @@
 eclipse.preferences.version=1
 encoding//src/modbus_c_plus_plus.cpp=UTF-8
+encoding//src/server/ModbusServer.cpp=UTF-8
+encoding//src/server/ModbusServer.h=UTF-8
+encoding//src/server/register.cpp=UTF-8

@@ -3,6 +3,7 @@
  *
  *  Created on: Feb 21, 2024
  *      Author: Alexandre Venito
+ *     License: MiT
  */
 
 #include "ModbusServer.h"
@@ -19,20 +20,24 @@ bool ModbusServer::init(int port) {
 	this->port = port;
 
 	/* Initialize the connection object with zeros. */
+	/* Inicializa o objeto com zeros. */
     memset(&mbServer, 0, sizeof(mbServer));
     mbServer.sin_family = AF_INET;
     mbServer.sin_addr.s_addr = htonl(INADDR_ANY);
     mbServer.sin_port = htons(port);
 
     /* Create a socket. */
+    /* Cria o socket */
     mbServerSocket = socket(AF_INET, SOCK_STREAM, 0);
     if(mbServerSocket < 0)
     {
         cout << "Modbus Server Socket Error!!!" << endl;
+        cout << "Erro no Socket Modbus Server!!!" << endl;
         return FALSE;
     }
 
     /* Socket established. Let's bind to the address. */
+    /* Socket estabelecido. Associa ao edereço. */
     bindSocketStatus = bind(mbServerSocket, (struct sockaddr*) &mbServer,
         sizeof(mbServer));
 
@@ -40,10 +45,13 @@ bool ModbusServer::init(int port) {
     {
     	cout << endl << "Error binding the socket!!" << endl;
        	cout << "It is not possible to open the port " << port << "! Are you root?" << endl;
+    	cout << endl << "Erro associando o socket!!" << endl;
+       	cout << "Não é possível abrir a porta " << port << "! Você tem direitos de admin?" << endl;
         return FALSE;
     }
 
     /* All good. Let's listen to the connections. */
+    /* Tudo ok. Escutando as conexões. */
     listen(mbServerSocket, totalConnections);
 
     return TRUE;
@@ -60,12 +68,14 @@ void ModbusServer::printFrame(char* mbMsg, int length) {
 void ModbusServer::runMbServer(void){
 
 	/* Wait for the client connection. */
+	/* Espera pela conexão */
 
     sockaddr_in newSocketAdd;
     socklen_t newSocketAddSize = sizeof(newSocketAdd);
     int	l_connections = 0;
 
     /* This is an infinite loop. It finishes with CTR+C signal. */
+    /* O servidor fica em loop infinito. Deve ser terminado com CTRC+C. */
     while(1){
     	bytesRead = 1;
 
@@ -75,13 +85,14 @@ void ModbusServer::runMbServer(void){
 
     	/* Blocking function waiting the client connection.
     	 * That's why the modbus server must run as a thread. */
+		/* Esta é uma função bloqueante, por isso devemos usá-la como thread. */
 
 		newSocket = accept(mbServerSocket, (sockaddr *)&newSocketAdd, &newSocketAddSize);
 
 		if(newSocket < 0)
 		{
 			if (DEBUG_LEVEL >= DBG_LEVEL_01) {
-				cerr << "Error accepting request from client! <=============================================> Errno: " << errno << endl;
+				cerr << "Error accepting request from client! Errno: " << errno << endl;
 			}
 			exit(0);
 		}
@@ -94,9 +105,11 @@ void ModbusServer::runMbServer(void){
 		while(bytesRead > 0) {
 
 			/* Blank the buffer. */
+			/* Zera o buffer. */
 			memset(&mbMsg, 0, sizeof(mbMsg));
 
 			/* Wait for the connection */
+			/* Espera pela conexão. */
 			bytesRead = recv(newSocket, (char*)&mbMsg, sizeof(mbMsg), 0);
 
 			if (DEBUG_LEVEL == DBG_LEVEL_03) {
@@ -104,15 +117,11 @@ void ModbusServer::runMbServer(void){
 				printFrame((char*)&mbMsg, bytesRead);
 			}
 
-//			transID 	= mbMsg[0] << 8 | mbMsg[1];
-//			protocol 	= mbMsg[2] << 8 | mbMsg[3];
-//			len			= mbMsg[4] << 8 | mbMsg[5];
 			uID			= (int) mbMsg[6];
 			func		= (int) mbMsg[7];
-//			startAdd 	= mbMsg[8] << 8  | mbMsg[9];
-//			numRegs  	= mbMsg[10] << 8 | mbMsg[11];
 
 			/* Selecting the function */
+			/* Seleciona a função. */
 			switch (func){
 				case 0:
 						shutdown (newSocket, SHUT_RDWR);
@@ -219,8 +228,6 @@ void ModbusServer::runMbServer(void){
 
 		close(newSocket);
 	}
-
-    //we need to close the socket descriptors after we're all done
 
 	if (DEBUG_LEVEL >= DBG_LEVEL_02) {
 		cout << "Connection closed newSocket: " << close(newSocket) << " -- mbServerSocket: " << close(mbServerSocket) << endl;

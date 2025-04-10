@@ -18,8 +18,10 @@ int ModbusServer::procReadDiscInput(char* msgMB){
 	}
 
 	/* Checking the address limit */
-	if ((startAdd >= 0) && ((startAdd + numDiscInputs) <= DISCRETE_INPUTS)) {
+	/* Verifica os limites  */
+if ((startAdd >= 0) && ((startAdd + numDiscInputs) <= DISCRETE_INPUTS)) {
 		/* Address limits ok */
+		/* Dentro dos limites */
 		len = 3 + ceil((double)numDiscInputs /8);
 		msgMB[msgIndex++] = (unsigned) len >> 8;
 		msgMB[msgIndex++] = (unsigned) len & 0xff;
@@ -32,7 +34,8 @@ int ModbusServer::procReadDiscInput(char* msgMB){
 			}
 		}
 	} else {
-		/*Out of the address limits */
+		/* Out of the address limits */
+		/* Fora dos limites */
 		msgMB[7] += 0x80;
 		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;

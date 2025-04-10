@@ -220,13 +220,16 @@ int main(int argc, char *argv[]) {
 	int port = PORT;
 
 	/* Declare the function to handler the CTR+C signal */
+	/* Declara a função que é chamada com o sinal CTR+C */
 	signal(SIGINT, signal_callback_handler);
 
 	/* Initialize the modbus server. */
 	if (Server.init(port)){
 		cout << endl << "Modbus server initialized and listening to port " << Server.getPort() << "." << endl;
+		cout << endl << "Modbus server inicializado e escutando a porta " << Server.getPort() << "." << endl;
 	} else {
 		cout << "Error!!!" << endl;
+		cout << "Erro!!!" << endl;
 		exit(0);
 	}
 

@@ -19,8 +19,10 @@ int ModbusServer::procReadReg(char* msgMB){
 	}
 
 	/* Checking the address limit */
+	/* Verifica os limites */
 	if ((startAdd >= 0) && ((startAdd + numRegs) <= REGISTERS)) {
 		/* Address limits ok */
+		/* Dentro dos limites */
 		len = 3 + numRegs * 2;
 		msgMB[msgIndex++] = (unsigned) len >> 8;
 		msgMB[msgIndex++] = (unsigned) len & 0xff;
@@ -32,7 +34,8 @@ int ModbusServer::procReadReg(char* msgMB){
 			msgMB[msgIndex++] = (unsigned) registers[startAdd + r] & 0xff;
 		}
 	} else {
-		/*Out of the address limits */
+		/* Out of the address limits */
+		/* Fora dos limites */
 		msgMB[7] += 0x80;
 		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;
@@ -45,6 +48,7 @@ int ModbusServer::procReadReg(char* msgMB){
 }
 
 /* Write Single */
+/* Escreve um único registro */
 int ModbusServer::procWriteSingReg(char* msgMB){
 
 	int msgIndex = 10;
@@ -63,13 +67,16 @@ int ModbusServer::procWriteSingReg(char* msgMB){
 	}
 
 	/* Checking the address limit */
+	/* Verifica os limites */
 	if ((addr >= 0) && (addr <= REGISTERS)) {
 		/* Address limits ok */
+		/* Dentro dos limites */
 		len = 12;
 		registers[addr] = (unsigned) mbMsg[msgIndex++] << 8;
 		registers[addr] |= (unsigned) mbMsg[msgIndex] & 0xff;
 	} else {
-		/*Out of the address limits */
+		/* Out of the address limits */
+		/* Fora dos limites */
 		msgMB[7] += 0x80;
 		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;
@@ -82,6 +89,7 @@ int ModbusServer::procWriteSingReg(char* msgMB){
 }
 
 /* Write Multiple */
+/* Escreve múltiplos registros */
 int ModbusServer::procWriteMultReg(char* msgMB){
 
 	int msgIndex = 13;
@@ -100,8 +108,10 @@ int ModbusServer::procWriteMultReg(char* msgMB){
 	}
 
 	/* Checking the address limit */
+	/* Verifica os limites */
 	if ((startAddr >= 0) && ((startAddr + numRegs) <= REGISTERS)) {
 		/* Address limits ok */
+		/* Dentro dos limites */
 		for (int r = 0; r <= numRegs; r++){
 			registers[startAdd + r] = (unsigned) mbMsg[msgIndex++] << 8;
 			registers[startAdd + r] |= (unsigned) mbMsg[msgIndex++] & 0xff;
@@ -111,7 +121,8 @@ int ModbusServer::procWriteMultReg(char* msgMB){
 		mbMsg[msgIndex++] = (unsigned) len >> 8;
 		mbMsg[msgIndex++] = (unsigned) len & 0xff;
 	} else {
-		/*Out of the address limits */
+		/* Out of the address limits */
+		/* Fora dos limites */
 		msgMB[7] += 0x80;
 		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;

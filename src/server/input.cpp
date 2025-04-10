@@ -18,8 +18,10 @@ int ModbusServer::procReadInput(char* msgMB){
 	}
 
 	/* Checking the address limit */
+	/* Verifica os limites */
 	if ((startAdd >= 0) && ((startAdd + numInputs) <= INPUTS)) {
 		/* Address limits ok */
+		/* Dentro dos limites */
 		len = 3 + numInputs * 2;
 		msgMB[msgIndex++] = (unsigned) len >> 8;
 		msgMB[msgIndex++] = (unsigned) len & 0xff;
@@ -31,7 +33,8 @@ int ModbusServer::procReadInput(char* msgMB){
 			msgMB[msgIndex++] = (unsigned) inputs[startAdd + r] & 0xff;
 		}
 	} else {
-		/*Out of the address limits */
+		/* Out of the address limits */
+		/* Fora dos limites */
 		msgMB[7] += 0x80;
 		msgMB[8] = EXCEP_ILLEGAL_DATA_ADD;
 		len = 3;

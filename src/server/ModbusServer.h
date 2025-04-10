@@ -9,6 +9,7 @@
 #define MODBUSSERVER_H_
 
 /* Coils, registers and inputs */
+/* Coils, registros e entradas */
 #define DISCRETE_INPUT_OFFSET		0
 #define DISCRETE_INPUTS				8
 #define COIL_OFFSET					0
@@ -19,6 +20,7 @@
 #define REGISTERS					16
 
 /* Modbus function codes */
+/* Código das funções Modbus */
 #define READ_COILS               	0x01
 #define READ_DISCRETE_INPUTS     	0x02
 #define READ_HOLDING_REGISTERS   	0x03
@@ -30,11 +32,13 @@
 #define BROADCAST_ADDRESS 			0x00
 
 /* Illegal function codes */
+/* Código de funções ilegais */
 #define EXCEP_ILLEGAL_FUNCTION		0x01
 #define EXCEP_ILLEGAL_DATA_ADD		0x02
 #define EXCEP_ILLEGAL_DATA_VALUE	0x03
 
 /* Debug levels */
+/* Níveis de Debug */
 #define DBG_LEVEL_01				0x01
 #define DBG_LEVEL_02				0x02
 #define DBG_LEVEL_03				0x03
